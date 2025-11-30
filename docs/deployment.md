@@ -68,7 +68,7 @@ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip
 
 # Configure credentials
 aws configure
-# Enter: Access Key ID, Secret Access Key, Region (ap-northeast-2)
+# Enter: Access Key ID, Secret Access Key, Region (us-east-1)
 ```
 
 ### 2. Required Tools
@@ -99,7 +99,7 @@ Configure these variables in your GitHub repository (Settings > Variables):
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `VITE_API_URL` | Backend API URL | `http://conduit-alb-xxx.ap-northeast-2.elb.amazonaws.com` |
+| `VITE_API_URL` | Backend API URL | `http://conduit-alb-xxx.us-east-1.elb.amazonaws.com` |
 
 ## Deployment Steps
 
@@ -112,7 +112,7 @@ cd infra
 npm install
 
 # Bootstrap CDK in your AWS account
-npx cdk bootstrap aws://ACCOUNT_ID/ap-northeast-2
+npx cdk bootstrap aws://ACCOUNT_ID/us-east-1
 ```
 
 ### Step 2: Deploy Infrastructure
@@ -153,7 +153,7 @@ aws cloudformation describe-stacks \
 Update the `VITE_API_URL` variable in GitHub with the ALB DNS:
 
 ```
-http://conduit-production-alb-xxxxxxxxx.ap-northeast-2.elb.amazonaws.com
+http://conduit-production-alb-xxxxxxxxx.us-east-1.elb.amazonaws.com
 ```
 
 ### Step 5: Deploy Backend
