@@ -5,6 +5,13 @@
 # Default environment
 ENV ?= development
 
+# Migrate binary (prefer go-installed version with sqlite3 support over homebrew)
+MIGRATE := $(shell test -f "$(HOME)/go/bin/migrate" && echo "$(HOME)/go/bin/migrate" || which migrate 2>/dev/null)
+
+# Database URL (default to SQLite for development)
+# Use := to force evaluation, and provide default if empty
+DB_URL := $(or $(DATABASE_URL),sqlite3://./data/conduit.db)
+
 # ============================================================================
 # Installation
 # ============================================================================
@@ -129,15 +136,19 @@ db-down:
 
 migrate:
 	@echo "📦 Running migrations..."
-	cd backend && migrate -path db/migrations -database "$${DATABASE_URL}" up
+	cd backend && $(MIGRATE) -path db/migrations -database "$(DB_URL)" up
 
 migrate-down:
 	@echo "📦 Rolling back last migration..."
-	cd backend && migrate -path db/migrations -database "$${DATABASE_URL}" down 1
+	cd backend && $(MIGRATE) -path db/migrations -database "$(DB_URL)" down 1
 
 migrate-status:
 	@echo "📦 Migration status..."
-	cd backend && migrate -path db/migrations -database "$${DATABASE_URL}" version
+	cd backend && $(MIGRATE) -path db/migrations -database "$(DB_URL)" version
+
+migrate-create:
+	@echo "📦 Creating new migration..."
+	cd backend && $(MIGRATE) create -ext sql -dir db/migrations -seq $(NAME)
 
 # ============================================================================
 # Deployment
