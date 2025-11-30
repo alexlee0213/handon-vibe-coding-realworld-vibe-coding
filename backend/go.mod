@@ -1,6 +1,6 @@
 module github.com/alexlee0213/realworld-conduit/backend
 
-go 1.25.4
+go 1.23
 
 require (
 	github.com/golang-jwt/jwt/v5 v5.3.0
