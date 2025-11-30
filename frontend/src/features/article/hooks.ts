@@ -179,6 +179,122 @@ export function useOptimisticArticleUpdate() {
           };
         }
       );
+
+      // Update in feed caches
+      queryClient.setQueriesData(
+        { queryKey: articleKeys.feed() },
+        (old: { articles: Article[]; articlesCount: number } | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            articles: old.articles.map((a) => (a.slug === slug ? updater(a) : a)),
+          };
+        }
+      );
     },
   };
+}
+
+// Hook to favorite an article with optimistic update
+export function useFavoriteArticle() {
+  const queryClient = useQueryClient();
+  const { updateArticleInCache } = useOptimisticArticleUpdate();
+
+  return useMutation({
+    mutationFn: (slug: string) => articleApi.favoriteArticle(slug),
+    onMutate: async (slug) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: articleKeys.detail(slug) });
+      await queryClient.cancelQueries({ queryKey: articleKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: articleKeys.feed() });
+
+      // Snapshot previous values
+      const previousArticle = queryClient.getQueryData(articleKeys.detail(slug));
+      const previousLists = queryClient.getQueriesData({ queryKey: articleKeys.lists() });
+      const previousFeed = queryClient.getQueriesData({ queryKey: articleKeys.feed() });
+
+      // Optimistically update
+      updateArticleInCache(slug, (article) => ({
+        ...article,
+        favorited: true,
+        favoritesCount: article.favoritesCount + 1,
+      }));
+
+      return { previousArticle, previousLists, previousFeed };
+    },
+    onError: (_error, slug, context) => {
+      // Rollback on error
+      if (context?.previousArticle) {
+        queryClient.setQueryData(articleKeys.detail(slug), context.previousArticle);
+      }
+      if (context?.previousLists) {
+        context.previousLists.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      if (context?.previousFeed) {
+        context.previousFeed.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
+    onSettled: (data) => {
+      // Update with actual server response
+      if (data) {
+        queryClient.setQueryData(articleKeys.detail(data.article.slug), data);
+      }
+    },
+  });
+}
+
+// Hook to unfavorite an article with optimistic update
+export function useUnfavoriteArticle() {
+  const queryClient = useQueryClient();
+  const { updateArticleInCache } = useOptimisticArticleUpdate();
+
+  return useMutation({
+    mutationFn: (slug: string) => articleApi.unfavoriteArticle(slug),
+    onMutate: async (slug) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: articleKeys.detail(slug) });
+      await queryClient.cancelQueries({ queryKey: articleKeys.lists() });
+      await queryClient.cancelQueries({ queryKey: articleKeys.feed() });
+
+      // Snapshot previous values
+      const previousArticle = queryClient.getQueryData(articleKeys.detail(slug));
+      const previousLists = queryClient.getQueriesData({ queryKey: articleKeys.lists() });
+      const previousFeed = queryClient.getQueriesData({ queryKey: articleKeys.feed() });
+
+      // Optimistically update
+      updateArticleInCache(slug, (article) => ({
+        ...article,
+        favorited: false,
+        favoritesCount: Math.max(0, article.favoritesCount - 1),
+      }));
+
+      return { previousArticle, previousLists, previousFeed };
+    },
+    onError: (_error, slug, context) => {
+      // Rollback on error
+      if (context?.previousArticle) {
+        queryClient.setQueryData(articleKeys.detail(slug), context.previousArticle);
+      }
+      if (context?.previousLists) {
+        context.previousLists.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      if (context?.previousFeed) {
+        context.previousFeed.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+    },
+    onSettled: (data) => {
+      // Update with actual server response
+      if (data) {
+        queryClient.setQueryData(articleKeys.detail(data.article.slug), data);
+      }
+    },
+  });
 }

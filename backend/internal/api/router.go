@@ -133,7 +133,16 @@ func (r *Router) Setup() http.Handler {
 	// Apply middleware chain
 	var h http.Handler = r.mux
 	h = middleware.Logging(r.logger)(h)
-	h = middleware.CORS(middleware.DefaultCORSConfig())(h)
+
+	// Configure CORS with origins from config
+	corsConfig := middleware.CORSConfig{
+		AllowedOrigins:   r.config.CORS.AllowedOrigins,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Requested-With"},
+		AllowCredentials: true,
+	}
+	h = middleware.CORS(corsConfig)(h)
+	h = middleware.Security()(h)
 	h = middleware.Recover(r.logger)(h)
 
 	return h

@@ -10,15 +10,15 @@ import (
 	"github.com/alexlee0213/realworld-conduit/backend/internal/domain"
 )
 
-// FavoriteRepository defines the interface for favorite relationship data operations
+// FavoriteRepository defines the interface for article favorite data operations
 type FavoriteRepository interface {
-	// FavoriteArticle creates a favorite relationship (user favorites article)
-	FavoriteArticle(ctx context.Context, userID, articleID int64) error
-	// UnfavoriteArticle removes a favorite relationship
-	UnfavoriteArticle(ctx context.Context, userID, articleID int64) error
-	// IsFavorited checks if userID has favorited articleID
+	// Favorite adds an article to user's favorites
+	Favorite(ctx context.Context, userID, articleID int64) error
+	// Unfavorite removes an article from user's favorites
+	Unfavorite(ctx context.Context, userID, articleID int64) error
+	// IsFavorited checks if a user has favorited an article
 	IsFavorited(ctx context.Context, userID, articleID int64) (bool, error)
-	// GetFavoritesCount returns the number of users who favorited the article
+	// GetFavoritesCount returns the number of favorites for an article
 	GetFavoritesCount(ctx context.Context, articleID int64) (int, error)
 	// IsFavoritedBulk checks favorite status for multiple articles at once
 	IsFavoritedBulk(ctx context.Context, userID int64, articleIDs []int64) (map[int64]bool, error)
@@ -38,8 +38,8 @@ func NewSQLiteFavoriteRepository(db *sql.DB, logger *slog.Logger) *SQLiteFavorit
 	}
 }
 
-// FavoriteArticle creates a favorite relationship (user favorites article)
-func (r *SQLiteFavoriteRepository) FavoriteArticle(ctx context.Context, userID, articleID int64) error {
+// Favorite adds an article to user's favorites
+func (r *SQLiteFavoriteRepository) Favorite(ctx context.Context, userID, articleID int64) error {
 	query := `
 		INSERT INTO favorites (user_id, article_id, created_at)
 		VALUES (?, ?, ?)
@@ -73,8 +73,8 @@ func (r *SQLiteFavoriteRepository) FavoriteArticle(ctx context.Context, userID, 
 	return nil
 }
 
-// UnfavoriteArticle removes a favorite relationship
-func (r *SQLiteFavoriteRepository) UnfavoriteArticle(ctx context.Context, userID, articleID int64) error {
+// Unfavorite removes an article from user's favorites
+func (r *SQLiteFavoriteRepository) Unfavorite(ctx context.Context, userID, articleID int64) error {
 	query := `
 		DELETE FROM favorites
 		WHERE user_id = ? AND article_id = ?
@@ -113,7 +113,7 @@ func (r *SQLiteFavoriteRepository) UnfavoriteArticle(ctx context.Context, userID
 	return nil
 }
 
-// IsFavorited checks if userID has favorited articleID
+// IsFavorited checks if a user has favorited an article
 func (r *SQLiteFavoriteRepository) IsFavorited(ctx context.Context, userID, articleID int64) (bool, error) {
 	if userID == 0 || articleID == 0 {
 		return false, nil
@@ -140,16 +140,9 @@ func (r *SQLiteFavoriteRepository) IsFavorited(ctx context.Context, userID, arti
 	return exists, nil
 }
 
-// GetFavoritesCount returns the number of users who favorited the article
+// GetFavoritesCount returns the number of favorites for an article
 func (r *SQLiteFavoriteRepository) GetFavoritesCount(ctx context.Context, articleID int64) (int, error) {
-	if articleID == 0 {
-		return 0, nil
-	}
-
-	query := `
-		SELECT COUNT(*) FROM favorites
-		WHERE article_id = ?
-	`
+	query := `SELECT COUNT(*) FROM favorites WHERE article_id = ?`
 
 	var count int
 	err := r.db.QueryRowContext(ctx, query, articleID).Scan(&count)

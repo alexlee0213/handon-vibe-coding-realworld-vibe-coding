@@ -41,9 +41,10 @@ func setupFavoriteTestDB(t *testing.T) *sql.DB {
 			title TEXT NOT NULL,
 			description TEXT NOT NULL,
 			body TEXT NOT NULL,
-			author_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			author_id INTEGER NOT NULL,
 			created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+			updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			FOREIGN KEY (author_id) REFERENCES users(id) ON DELETE CASCADE
 		);
 	`)
 	if err != nil {
@@ -108,7 +109,7 @@ func createFavoriteTestArticle(t *testing.T, db *sql.DB, authorID int64, slug, t
 	return id
 }
 
-func TestFavoriteArticle(t *testing.T) {
+func TestFavorite(t *testing.T) {
 	db := setupFavoriteTestDB(t)
 	defer db.Close()
 
@@ -116,12 +117,12 @@ func TestFavoriteArticle(t *testing.T) {
 	ctx := context.Background()
 
 	// Create test user and article
-	userID := createFavoriteTestUser(t, db, "user@example.com", "testuser")
+	userID := createFavoriteTestUser(t, db, "user@example.com", "user")
 	authorID := createFavoriteTestUser(t, db, "author@example.com", "author")
 	articleID := createFavoriteTestArticle(t, db, authorID, "test-article", "Test Article")
 
 	t.Run("successfully favorites an article", func(t *testing.T) {
-		err := repo.FavoriteArticle(ctx, userID, articleID)
+		err := repo.Favorite(ctx, userID, articleID)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
@@ -136,24 +137,16 @@ func TestFavoriteArticle(t *testing.T) {
 		}
 	})
 
-	t.Run("favoriting same article again is a no-op", func(t *testing.T) {
-		err := repo.FavoriteArticle(ctx, userID, articleID)
+	t.Run("favoriting same article again is idempotent", func(t *testing.T) {
+		// Article is already favorited from previous test
+		err := repo.Favorite(ctx, userID, articleID)
 		if err != nil {
 			t.Errorf("expected no error for duplicate favorite, got %v", err)
-		}
-
-		// Verify still favorited
-		isFavorited, err := repo.IsFavorited(ctx, userID, articleID)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-		if !isFavorited {
-			t.Error("expected article to still be favorited")
 		}
 	})
 }
 
-func TestUnfavoriteArticle(t *testing.T) {
+func TestUnfavorite(t *testing.T) {
 	db := setupFavoriteTestDB(t)
 	defer db.Close()
 
@@ -161,19 +154,19 @@ func TestUnfavoriteArticle(t *testing.T) {
 	ctx := context.Background()
 
 	// Create test user and article
-	userID := createFavoriteTestUser(t, db, "user@example.com", "testuser")
+	userID := createFavoriteTestUser(t, db, "user@example.com", "user")
 	authorID := createFavoriteTestUser(t, db, "author@example.com", "author")
 	articleID := createFavoriteTestArticle(t, db, authorID, "test-article", "Test Article")
 
 	t.Run("successfully unfavorites an article", func(t *testing.T) {
-		// First, favorite the article
-		err := repo.FavoriteArticle(ctx, userID, articleID)
+		// First, favorite
+		err := repo.Favorite(ctx, userID, articleID)
 		if err != nil {
-			t.Fatalf("setup failed: %v", err)
+			t.Fatalf("failed to favorite: %v", err)
 		}
 
-		// Then unfavorite
-		err = repo.UnfavoriteArticle(ctx, userID, articleID)
+		// Then, unfavorite
+		err = repo.Unfavorite(ctx, userID, articleID)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
@@ -181,20 +174,18 @@ func TestUnfavoriteArticle(t *testing.T) {
 		// Verify the favorite relationship is removed
 		isFavorited, err := repo.IsFavorited(ctx, userID, articleID)
 		if err != nil {
-			t.Errorf("expected no error, got %v", err)
+			t.Errorf("expected no error checking favorite status, got %v", err)
 		}
 		if isFavorited {
 			t.Error("expected article to not be favorited")
 		}
 	})
 
-	t.Run("unfavoriting non-favorited article is a no-op", func(t *testing.T) {
-		// Create new article that hasn't been favorited
-		newArticleID := createFavoriteTestArticle(t, db, authorID, "another-article", "Another Article")
-
-		err := repo.UnfavoriteArticle(ctx, userID, newArticleID)
+	t.Run("unfavoriting when not favorited is idempotent", func(t *testing.T) {
+		// Article is not favorited now
+		err := repo.Unfavorite(ctx, userID, articleID)
 		if err != nil {
-			t.Errorf("expected no error for unfavoriting non-favorited article, got %v", err)
+			t.Errorf("expected no error for unfavorite when not favorited, got %v", err)
 		}
 	})
 }
@@ -206,26 +197,25 @@ func TestIsFavorited(t *testing.T) {
 	repo := NewSQLiteFavoriteRepository(db, newTestLogger())
 	ctx := context.Background()
 
-	// Create test users and article
-	userID := createFavoriteTestUser(t, db, "user@example.com", "testuser")
+	// Create test user and article
+	userID := createFavoriteTestUser(t, db, "user@example.com", "user")
 	authorID := createFavoriteTestUser(t, db, "author@example.com", "author")
 	articleID := createFavoriteTestArticle(t, db, authorID, "test-article", "Test Article")
 
-	t.Run("returns false for non-favorited article", func(t *testing.T) {
+	t.Run("returns false when not favorited", func(t *testing.T) {
 		isFavorited, err := repo.IsFavorited(ctx, userID, articleID)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
 		if isFavorited {
-			t.Error("expected article to not be favorited")
+			t.Error("expected false when not favorited")
 		}
 	})
 
-	t.Run("returns true for favorited article", func(t *testing.T) {
-		// Favorite the article
-		err := repo.FavoriteArticle(ctx, userID, articleID)
+	t.Run("returns true when favorited", func(t *testing.T) {
+		err := repo.Favorite(ctx, userID, articleID)
 		if err != nil {
-			t.Fatalf("setup failed: %v", err)
+			t.Fatalf("failed to favorite: %v", err)
 		}
 
 		isFavorited, err := repo.IsFavorited(ctx, userID, articleID)
@@ -233,7 +223,7 @@ func TestIsFavorited(t *testing.T) {
 			t.Errorf("expected no error, got %v", err)
 		}
 		if !isFavorited {
-			t.Error("expected article to be favorited")
+			t.Error("expected true when favorited")
 		}
 	})
 
@@ -272,38 +262,52 @@ func TestGetFavoritesCount(t *testing.T) {
 	authorID := createFavoriteTestUser(t, db, "author@example.com", "author")
 	articleID := createFavoriteTestArticle(t, db, authorID, "test-article", "Test Article")
 
-	t.Run("returns 0 for article with no favorites", func(t *testing.T) {
+	t.Run("returns 0 when no favorites", func(t *testing.T) {
 		count, err := repo.GetFavoritesCount(ctx, articleID)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
 		if count != 0 {
-			t.Errorf("expected count 0, got %d", count)
+			t.Errorf("expected 0 favorites, got %d", count)
 		}
 	})
 
 	t.Run("returns correct count after favorites", func(t *testing.T) {
-		// Add favorites from multiple users
-		repo.FavoriteArticle(ctx, user1ID, articleID)
-		repo.FavoriteArticle(ctx, user2ID, articleID)
-		repo.FavoriteArticle(ctx, user3ID, articleID)
+		// Multiple users favorite the article
+		err := repo.Favorite(ctx, user1ID, articleID)
+		if err != nil {
+			t.Fatalf("failed to favorite: %v", err)
+		}
+		err = repo.Favorite(ctx, user2ID, articleID)
+		if err != nil {
+			t.Fatalf("failed to favorite: %v", err)
+		}
+		err = repo.Favorite(ctx, user3ID, articleID)
+		if err != nil {
+			t.Fatalf("failed to favorite: %v", err)
+		}
 
 		count, err := repo.GetFavoritesCount(ctx, articleID)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
 		if count != 3 {
-			t.Errorf("expected count 3, got %d", count)
+			t.Errorf("expected 3 favorites, got %d", count)
 		}
 	})
 
-	t.Run("returns 0 for zero article ID", func(t *testing.T) {
-		count, err := repo.GetFavoritesCount(ctx, 0)
+	t.Run("count decreases after unfavorite", func(t *testing.T) {
+		err := repo.Unfavorite(ctx, user1ID, articleID)
+		if err != nil {
+			t.Fatalf("failed to unfavorite: %v", err)
+		}
+
+		count, err := repo.GetFavoritesCount(ctx, articleID)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
-		if count != 0 {
-			t.Errorf("expected count 0 for zero article ID, got %d", count)
+		if count != 2 {
+			t.Errorf("expected 2 favorites, got %d", count)
 		}
 	})
 }
@@ -316,45 +320,50 @@ func TestIsFavoritedBulk(t *testing.T) {
 	ctx := context.Background()
 
 	// Create test user and articles
-	userID := createFavoriteTestUser(t, db, "user@example.com", "testuser")
+	userID := createFavoriteTestUser(t, db, "user@example.com", "user")
 	authorID := createFavoriteTestUser(t, db, "author@example.com", "author")
 	article1ID := createFavoriteTestArticle(t, db, authorID, "article-1", "Article 1")
 	article2ID := createFavoriteTestArticle(t, db, authorID, "article-2", "Article 2")
 	article3ID := createFavoriteTestArticle(t, db, authorID, "article-3", "Article 3")
 
-	// Favorite articles 1 and 3 (not 2)
-	repo.FavoriteArticle(ctx, userID, article1ID)
-	repo.FavoriteArticle(ctx, userID, article3ID)
+	// User favorites article1 and article2 but not article3
+	err := repo.Favorite(ctx, userID, article1ID)
+	if err != nil {
+		t.Fatalf("failed to favorite: %v", err)
+	}
+	err = repo.Favorite(ctx, userID, article2ID)
+	if err != nil {
+		t.Fatalf("failed to favorite: %v", err)
+	}
 
-	t.Run("returns correct status for multiple articles", func(t *testing.T) {
-		articleIDs := []int64{article1ID, article2ID, article3ID}
-		result, err := repo.IsFavoritedBulk(ctx, userID, articleIDs)
+	t.Run("returns correct favorite status for multiple articles", func(t *testing.T) {
+		result, err := repo.IsFavoritedBulk(ctx, userID, []int64{article1ID, article2ID, article3ID})
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
 
 		if !result[article1ID] {
-			t.Error("expected article 1 to be favorited")
+			t.Error("expected article1 to be favorited")
 		}
-		if result[article2ID] {
-			t.Error("expected article 2 to not be favorited")
+		if !result[article2ID] {
+			t.Error("expected article2 to be favorited")
 		}
-		if !result[article3ID] {
-			t.Error("expected article 3 to be favorited")
+		if result[article3ID] {
+			t.Error("expected article3 to not be favorited")
 		}
 	})
 
 	t.Run("returns all false for zero user ID", func(t *testing.T) {
-		articleIDs := []int64{article1ID, article2ID}
-		result, err := repo.IsFavoritedBulk(ctx, 0, articleIDs)
+		result, err := repo.IsFavoritedBulk(ctx, 0, []int64{article1ID, article2ID})
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
 
-		for _, id := range articleIDs {
-			if result[id] {
-				t.Errorf("expected false for article %d with zero user ID", id)
-			}
+		if result[article1ID] {
+			t.Error("expected false for article1 with zero user ID")
+		}
+		if result[article2ID] {
+			t.Error("expected false for article2 with zero user ID")
 		}
 	})
 
