@@ -33,7 +33,13 @@ func main() {
 	)
 
 	// Setup router
-	router := api.NewRouter(logger)
+	router, err := api.NewRouter(cfg, logger)
+	if err != nil {
+		logger.Error("failed to create router", "error", err)
+		os.Exit(1)
+	}
+	defer router.Close()
+
 	handler := router.Setup()
 
 	// Create server
