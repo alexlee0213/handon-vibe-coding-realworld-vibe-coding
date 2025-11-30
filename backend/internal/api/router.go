@@ -58,6 +58,7 @@ func (r *Router) Setup() http.Handler {
 	// Initialize repositories
 	userRepo := repository.NewSQLiteUserRepository(r.db, r.logger)
 	articleRepo := repository.NewSQLiteArticleRepository(r.db, r.logger)
+	commentRepo := repository.NewSQLiteCommentRepository(r.db, r.logger)
 
 	// Initialize services
 	authService := service.NewAuthService(
@@ -67,11 +68,13 @@ func (r *Router) Setup() http.Handler {
 		r.logger,
 	)
 	articleService := service.NewArticleService(articleRepo, userRepo, r.logger)
+	commentService := service.NewCommentService(commentRepo, articleRepo, userRepo, r.logger)
 
 	// Initialize handlers
 	healthHandler := handler.NewHealthHandler()
 	userHandler := handler.NewUserHandler(authService, r.logger)
 	articleHandler := handler.NewArticleHandler(articleService, r.logger)
+	commentHandler := handler.NewCommentHandler(commentService, r.logger)
 
 	// Health check
 	r.mux.HandleFunc("GET /health", healthHandler.Health)
@@ -104,6 +107,13 @@ func (r *Router) Setup() http.Handler {
 
 	// Tags route (public)
 	r.mux.HandleFunc("GET /api/tags", articleHandler.GetTags)
+
+	// Comment routes (public - with optional auth)
+	r.mux.Handle("GET /api/articles/{slug}/comments", optionalAuthMw(http.HandlerFunc(commentHandler.GetComments)))
+
+	// Comment routes (authenticated)
+	r.mux.Handle("POST /api/articles/{slug}/comments", authMw(http.HandlerFunc(commentHandler.CreateComment)))
+	r.mux.Handle("DELETE /api/articles/{slug}/comments/{id}", authMw(http.HandlerFunc(commentHandler.DeleteComment)))
 
 	// Apply middleware chain
 	var h http.Handler = r.mux
