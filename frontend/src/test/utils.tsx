@@ -2,7 +2,21 @@ import type { ReactNode } from 'react';
 import { render, type RenderOptions } from '@testing-library/react';
 import { MantineProvider } from '@mantine/core';
 import { QueryClientProvider, QueryClient } from '@tanstack/react-query';
+import { vi } from 'vitest';
 import { theme } from '../lib/theme';
+
+// Mock the @tanstack/react-router Link component
+vi.mock('@tanstack/react-router', async () => {
+  const actual = await vi.importActual('@tanstack/react-router');
+  return {
+    ...actual,
+    Link: ({ children, to, ...props }: { children: ReactNode; to: string }) => (
+      <a href={typeof to === 'string' ? to : '#'} {...props}>
+        {children}
+      </a>
+    ),
+  };
+});
 
 const createTestQueryClient = () =>
   new QueryClient({

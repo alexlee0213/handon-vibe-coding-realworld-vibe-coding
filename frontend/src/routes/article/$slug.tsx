@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   Container,
@@ -17,7 +18,9 @@ import {
 import { IconEdit, IconTrash, IconAlertCircle } from '@tabler/icons-react';
 import { useArticle, useDeleteArticle } from '../../features/article';
 import { useUser, useIsAuthenticated } from '../../features/auth';
+import { useComments, useCreateComment, useDeleteComment } from '../../features/comment';
 import { ArticleMeta } from '../../components/article';
+import { CommentForm, CommentList } from '../../components/comment';
 
 export const Route = createFileRoute('/article/$slug')({
   component: ArticlePage,
@@ -29,6 +32,12 @@ function ArticlePage() {
   const deleteArticle = useDeleteArticle();
   const user = useUser();
   const isAuthenticated = useIsAuthenticated();
+
+  // Comment state and hooks
+  const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
+  const commentsQuery = useComments(slug);
+  const createComment = useCreateComment(slug);
+  const deleteComment = useDeleteComment(slug);
 
   if (isLoading) {
     return (
@@ -60,6 +69,17 @@ function ArticlePage() {
     if (window.confirm('Are you sure you want to delete this article?')) {
       deleteArticle.mutate(slug);
     }
+  };
+
+  const handleCreateComment = (data: { body: string }) => {
+    createComment.mutate(data);
+  };
+
+  const handleDeleteComment = (commentId: number) => {
+    setDeletingCommentId(commentId);
+    deleteComment.mutate(commentId, {
+      onSettled: () => setDeletingCommentId(null),
+    });
   };
 
   return (
@@ -132,6 +152,27 @@ function ArticlePage() {
             <ArticleMeta author={article.author} createdAt={article.createdAt} size="md" />
           </Group>
         </Paper>
+
+        <Divider my="xl" />
+
+        {/* Comments Section */}
+        <Stack gap="lg">
+          <Title order={3}>Comments</Title>
+
+          <CommentForm
+            onSubmit={handleCreateComment}
+            isSubmitting={createComment.isPending}
+          />
+
+          <CommentList
+            comments={commentsQuery.data?.comments}
+            isLoading={commentsQuery.isLoading}
+            error={commentsQuery.error}
+            currentUsername={user?.username}
+            onDeleteComment={handleDeleteComment}
+            deletingCommentId={deletingCommentId}
+          />
+        </Stack>
       </Container>
     </>
   );

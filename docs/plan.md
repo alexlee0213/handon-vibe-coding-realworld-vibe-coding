@@ -358,14 +358,14 @@ npm run test
 
 **작업 목록:**
 
-- [ ] `src/features/comment/` - 댓글 기능 모듈
-- [ ] `src/components/comment/CommentCard.tsx`
-- [ ] `src/components/comment/CommentForm.tsx`
-- [ ] `src/components/comment/CommentList.tsx`
-- [ ] `src/components/common/TagList.tsx`
-- [ ] 홈 페이지에 태그 사이드바 추가
-- [ ] 아티클 상세 페이지에 댓글 섹션 추가
-- [ ] 컴포넌트 테스트 작성
+- [x] `src/features/comment/` - 댓글 기능 모듈
+- [x] `src/components/comment/CommentCard.tsx`
+- [x] `src/components/comment/CommentForm.tsx`
+- [x] `src/components/comment/CommentList.tsx`
+- [x] `src/components/article/TagList.tsx` (기존 위치에 구현됨)
+- [x] 홈 페이지에 태그 사이드바 추가
+- [x] 아티클 상세 페이지에 댓글 섹션 추가
+- [x] 컴포넌트 테스트 작성
 
 ---
 
