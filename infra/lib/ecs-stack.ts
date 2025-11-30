@@ -18,7 +18,7 @@ export interface EcsStackProps extends cdk.StackProps {
 }
 
 export class EcsStack extends cdk.Stack {
-  public readonly ecrRepository: ecr.Repository;
+  public readonly ecrRepository: ecr.IRepository;
   public readonly ecsCluster: ecs.Cluster;
   public readonly fargateService: ecs.FargateService;
   public readonly loadBalancer: elbv2.ApplicationLoadBalancer;
@@ -28,20 +28,13 @@ export class EcsStack extends cdk.Stack {
 
     const { environment, vpc, dbSecret, dbEndpoint, dbPort, jwtSecretArn } = props;
 
-    // ECR Repository for backend images
-    this.ecrRepository = new ecr.Repository(this, 'ConduitBackendRepo', {
-      repositoryName: `conduit-${environment}-backend`,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      emptyOnDelete: true,
-      imageScanOnPush: true,
-      lifecycleRules: [
-        {
-          description: 'Keep only last 5 images',
-          maxImageCount: 5,
-          rulePriority: 1,
-        },
-      ],
-    });
+    // Import existing ECR Repository (created manually or by previous deployment)
+    // This avoids conflicts when the repository already exists
+    this.ecrRepository = ecr.Repository.fromRepositoryName(
+      this,
+      'ConduitBackendRepo',
+      `conduit-${environment}-backend`
+    );
 
     // ECS Cluster
     this.ecsCluster = new ecs.Cluster(this, 'ConduitCluster', {
@@ -105,6 +98,10 @@ export class EcsStack extends cdk.Stack {
         DB_PORT: dbPort,
         DB_NAME: 'conduit',
         DB_SSLMODE: 'require',
+        JWT_EXPIRY: '72h',
+        // CORS: Allow GitHub Pages frontend domain
+        // Update this when you have a custom domain
+        CORS_ALLOWED_ORIGINS: 'https://alexlee0213.github.io',
       },
       secrets: {
         DB_USERNAME: ecs.Secret.fromSecretsManager(dbSecret, 'username'),

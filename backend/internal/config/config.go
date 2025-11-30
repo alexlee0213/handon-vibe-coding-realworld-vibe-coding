@@ -28,7 +28,13 @@ type ServerConfig struct {
 }
 
 type DatabaseConfig struct {
-	URL string
+	URL      string
+	Host     string
+	Port     string
+	Name     string
+	Username string
+	Password string
+	SSLMode  string
 }
 
 type JWTConfig struct {
@@ -74,14 +80,15 @@ func Load() (*Config, error) {
 	// Parse CORS allowed origins from environment
 	allowedOrigins := parseOrigins(getEnv("CORS_ALLOWED_ORIGINS", ""))
 
+	// Build database configuration
+	dbConfig := buildDatabaseConfig()
+
 	cfg := &Config{
 		Server: ServerConfig{
 			Port: getEnv("SERVER_PORT", "8080"),
 			Env:  env,
 		},
-		Database: DatabaseConfig{
-			URL: getEnv("DATABASE_URL", "sqlite3://./data/conduit.db"),
-		},
+		Database: dbConfig,
 		JWT: JWTConfig{
 			Secret: jwtSecret,
 			Expiry: parseDuration(getEnv("JWT_EXPIRY", "72h")),
@@ -99,6 +106,60 @@ func getEnv(key, defaultValue string) string {
 		return value
 	}
 	return defaultValue
+}
+
+// buildDatabaseConfig creates database configuration from environment variables
+// Priority: DATABASE_URL > individual DB_* variables > default SQLite
+func buildDatabaseConfig() DatabaseConfig {
+	// First, check if DATABASE_URL is explicitly set
+	if url := os.Getenv("DATABASE_URL"); url != "" {
+		slog.Debug("using DATABASE_URL for database configuration")
+		return DatabaseConfig{URL: url}
+	}
+
+	// Check for individual PostgreSQL environment variables (used by ECS)
+	host := os.Getenv("DB_HOST")
+	port := getEnv("DB_PORT", "5432")
+	name := getEnv("DB_NAME", "conduit")
+	username := os.Getenv("DB_USERNAME")
+	password := os.Getenv("DB_PASSWORD")
+	sslmode := getEnv("DB_SSLMODE", "require")
+
+	// If DB_HOST is set, build PostgreSQL connection URL
+	if host != "" {
+		url := buildPostgresURL(host, port, name, username, password, sslmode)
+		slog.Debug("built PostgreSQL URL from individual environment variables",
+			"host", host,
+			"port", port,
+			"name", name,
+			"sslmode", sslmode,
+		)
+		return DatabaseConfig{
+			URL:      url,
+			Host:     host,
+			Port:     port,
+			Name:     name,
+			Username: username,
+			Password: password,
+			SSLMode:  sslmode,
+		}
+	}
+
+	// Default to SQLite for local development
+	slog.Debug("using default SQLite database for development")
+	return DatabaseConfig{URL: "sqlite3://./data/conduit.db"}
+}
+
+// buildPostgresURL constructs a PostgreSQL connection URL from individual components
+func buildPostgresURL(host, port, name, username, password, sslmode string) string {
+	// Format: postgres://username:password@host:port/database?sslmode=mode
+	if username != "" && password != "" {
+		return "postgres://" + username + ":" + password + "@" + host + ":" + port + "/" + name + "?sslmode=" + sslmode
+	}
+	if username != "" {
+		return "postgres://" + username + "@" + host + ":" + port + "/" + name + "?sslmode=" + sslmode
+	}
+	return "postgres://" + host + ":" + port + "/" + name + "?sslmode=" + sslmode
 }
 
 func parseDuration(s string) time.Duration {
