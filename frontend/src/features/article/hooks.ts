@@ -50,11 +50,12 @@ export function useInfiniteArticles(params?: Omit<ArticleListParams, 'offset'>) 
 }
 
 // Hook to get user feed
-export function useFeed(params?: ArticleFeedParams) {
+export function useFeed(params?: ArticleFeedParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: articleKeys.feedPaginated(params),
     queryFn: () => articleApi.getFeed(params),
     staleTime: 30 * 1000, // 30 seconds (more fresh for feed)
+    enabled: options?.enabled ?? true,
   });
 }
 

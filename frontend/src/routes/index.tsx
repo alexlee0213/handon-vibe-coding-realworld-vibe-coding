@@ -19,7 +19,7 @@ function HomePage() {
   // When tag is selected, show tag tab
   const currentTab = selectedTag ? 'tag' : activeTab;
 
-  const feedQuery = useFeed({ limit: 10 });
+  const feedQuery = useFeed({ limit: 10 }, { enabled: isAuthenticated });
   const globalQuery = useArticles({
     limit: 10,
     tag: selectedTag

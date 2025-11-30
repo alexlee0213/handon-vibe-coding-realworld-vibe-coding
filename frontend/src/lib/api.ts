@@ -15,9 +15,10 @@ export const api = ky.create({
     ],
     afterResponse: [
       async (_request, _options, response) => {
+        // Clear invalid token on 401, but don't redirect
+        // Let AuthGuard components handle redirects for protected routes
         if (response.status === 401) {
           localStorage.removeItem('token');
-          window.location.href = '/login';
         }
         return response;
       },

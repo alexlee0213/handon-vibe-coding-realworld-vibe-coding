@@ -24,6 +24,9 @@ WORKDIR /app
 # Install ca-certificates for HTTPS and curl for health checks
 RUN apk --no-cache add ca-certificates curl
 
+# Create non-root user
+RUN adduser -D -g '' appuser
+
 # Copy binary from builder
 COPY --from=builder /app/server .
 
@@ -31,8 +34,9 @@ COPY --from=builder /app/server .
 COPY --from=builder /app/db/migrations ./db/migrations
 COPY --from=builder /app/db/migrations_postgres ./db/migrations_postgres
 
-# Create non-root user
-RUN adduser -D -g '' appuser
+# Set ownership for appuser
+RUN chown -R appuser:appuser /app
+
 USER appuser
 
 # Expose port
