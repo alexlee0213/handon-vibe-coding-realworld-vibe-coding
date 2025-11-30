@@ -170,6 +170,59 @@ slog.Info("article created",
 5. **코드 생성** > 외부 의존성 추가
 6. **구조화된 로깅** > printf 디버깅
 
+## Development Guidelines
+
+### Backend: TDD (Test-Driven Development)
+
+백엔드 구현은 TDD 원칙을 따른다:
+
+1. **Red**: 실패하는 테스트 먼저 작성
+2. **Green**: 테스트를 통과하는 최소한의 코드 작성
+3. **Refactor**: 코드 개선 (테스트는 계속 통과해야 함)
+
+```go
+// 1. 테스트 먼저 작성
+func TestCreateUser(t *testing.T) {
+    // 테스트 케이스 정의
+}
+
+// 2. 구현 코드 작성
+func (r *UserRepository) CreateUser(ctx context.Context, user *User) error {
+    // 최소한의 구현
+}
+
+// 3. 리팩토링
+```
+
+**TDD 적용 범위**:
+- Repository Layer: 모든 데이터 접근 메서드
+- Service Layer: 비즈니스 로직
+- Handler Layer: HTTP 엔드포인트 (통합 테스트)
+
+### Frontend: Playwright MCP 활용
+
+프론트엔드 개발 시 Playwright MCP를 사용하여 구현 상태를 시각적으로 확인한다:
+
+1. **컴포넌트 개발 후**: 브라우저에서 렌더링 상태 확인
+2. **페이지 구현 후**: 네비게이션 및 라우팅 동작 검증
+3. **폼 구현 후**: 입력/제출 플로우 테스트
+4. **API 연동 후**: 실제 데이터 흐름 확인
+
+```bash
+# Playwright MCP 활용 예시
+- browser_navigate: 페이지 이동
+- browser_snapshot: 현재 상태 캡처
+- browser_click: 버튼/링크 클릭 테스트
+- browser_fill_form: 폼 입력 테스트
+- browser_take_screenshot: 스크린샷 저장
+```
+
+**확인 시점**:
+- 새로운 페이지/컴포넌트 구현 완료 시
+- 스타일링 변경 시
+- 사용자 인터랙션 로직 구현 시
+- 버그 수정 후 검증 시
+
 ## API Endpoints
 
 | Method | Endpoint | Description | Auth |
