@@ -147,6 +147,22 @@ PR_ADDITIONS=$(echo "$PR_JSON" | jq -r '.additions')
 PR_DELETIONS=$(echo "$PR_JSON" | jq -r '.deletions')
 PR_MERGEABLE=$(echo "$PR_JSON" | jq -r '.mergeable')
 
+# Retry if mergeable status is UNKNOWN (GitHub still calculating)
+RETRY_COUNT=0
+MAX_RETRIES=3
+RETRY_DELAY=3
+
+while [ "$PR_MERGEABLE" == "UNKNOWN" ] && [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    RETRY_COUNT=$((RETRY_COUNT + 1))
+    log_warning "Mergeable status is UNKNOWN. Waiting ${RETRY_DELAY}s... (attempt ${RETRY_COUNT}/${MAX_RETRIES})"
+    sleep $RETRY_DELAY
+    PR_MERGEABLE=$(gh pr view "$PR_NUMBER" --json mergeable --jq '.mergeable' 2>/dev/null)
+done
+
+if [ "$PR_MERGEABLE" == "UNKNOWN" ]; then
+    log_warning "Mergeable status still UNKNOWN after ${MAX_RETRIES} retries. Manual resolution required."
+fi
+
 # Get current GitHub user
 CURRENT_USER=$(gh api user --jq '.login' 2>/dev/null || echo "")
 IS_OWN_PR=false
