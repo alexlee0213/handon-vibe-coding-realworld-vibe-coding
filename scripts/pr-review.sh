@@ -304,14 +304,19 @@ All checks have passed successfully:
 *This review was generated automatically by pr-review.sh*"
 
     if $DRY_RUN; then
-        log_dry_run "Would APPROVE PR #${PR_NUMBER} with the following review:"
+        if $IS_OWN_PR; then
+            log_dry_run "Would MERGE PR #${PR_NUMBER} (own PR) with the following comment:"
+        else
+            log_dry_run "Would APPROVE PR #${PR_NUMBER} with the following review:"
+        fi
         echo ""
         echo "$REVIEW_BODY"
         echo ""
     elif $IS_OWN_PR; then
-        log_warning "Cannot approve your own PR. Adding comment instead..."
+        log_info "Own PR detected. Adding comment and merging..."
         gh pr comment "$PR_NUMBER" --body "$REVIEW_BODY"
-        log_success "PR #${PR_NUMBER} - comment added (all checks passed)"
+        gh pr merge "$PR_NUMBER" --squash --delete-branch
+        log_success "PR #${PR_NUMBER} merged!"
     else
         log_info "Submitting review..."
         gh pr review "$PR_NUMBER" --approve --body "$REVIEW_BODY"
