@@ -1,6 +1,6 @@
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { AppShell } from '@mantine/core';
+import { Layout } from '../components/layout';
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -8,9 +8,9 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   return (
-    <AppShell>
+    <Layout>
       <Outlet />
       {import.meta.env.DEV && <TanStackRouterDevtools position="bottom-right" />}
-    </AppShell>
+    </Layout>
   );
 }
