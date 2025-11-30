@@ -4,12 +4,11 @@ import {
   Text,
   Group,
   Badge,
-  ActionIcon,
   Stack,
 } from '@mantine/core';
-import { IconHeart } from '@tabler/icons-react';
 import type { Article } from '../../features/article';
 import { ArticleMeta } from './ArticleMeta';
+import { FavoriteButton } from './FavoriteButton';
 
 interface ArticleCardProps {
   article: Article;
@@ -21,13 +20,11 @@ export function ArticleCard({ article }: ArticleCardProps) {
       <Stack gap="sm">
         <Group justify="space-between" align="flex-start">
           <ArticleMeta author={article.author} createdAt={article.createdAt} />
-          <ActionIcon
-            variant={article.favorited ? 'filled' : 'outline'}
-            color="brand"
-            size="sm"
-          >
-            <IconHeart size={14} />
-          </ActionIcon>
+          <FavoriteButton
+            slug={article.slug}
+            favorited={article.favorited}
+            favoritesCount={article.favoritesCount}
+          />
         </Group>
 
         <Stack gap={4}>

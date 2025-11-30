@@ -76,3 +76,15 @@ export async function getTags(): Promise<TagsResponse> {
   const response = await api.get('tags');
   return response.json<TagsResponse>();
 }
+
+// Favorite an article
+export async function favoriteArticle(slug: string): Promise<ArticleResponse> {
+  const response = await api.post(`articles/${slug}/favorite`);
+  return response.json<ArticleResponse>();
+}
+
+// Unfavorite an article
+export async function unfavoriteArticle(slug: string): Promise<ArticleResponse> {
+  const response = await api.delete(`articles/${slug}/favorite`);
+  return response.json<ArticleResponse>();
+}

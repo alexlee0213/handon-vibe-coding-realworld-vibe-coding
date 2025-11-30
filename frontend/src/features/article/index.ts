@@ -20,6 +20,8 @@ export {
   updateArticle,
   deleteArticle,
   getTags,
+  favoriteArticle,
+  unfavoriteArticle,
 } from './api';
 
 // Hooks
@@ -35,6 +37,8 @@ export {
   useDeleteArticle,
   useTags,
   useOptimisticArticleUpdate,
+  useFavoriteArticle,
+  useUnfavoriteArticle,
 } from './hooks';
 
 // Schemas
