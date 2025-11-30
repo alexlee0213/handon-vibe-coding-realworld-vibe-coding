@@ -21,14 +21,15 @@ FROM alpine:3.19
 
 WORKDIR /app
 
-# Install ca-certificates for HTTPS
-RUN apk --no-cache add ca-certificates
+# Install ca-certificates for HTTPS and curl for health checks
+RUN apk --no-cache add ca-certificates curl
 
 # Copy binary from builder
 COPY --from=builder /app/server .
 
-# Copy migrations
+# Copy migrations (both SQLite and PostgreSQL)
 COPY --from=builder /app/db/migrations ./db/migrations
+COPY --from=builder /app/db/migrations_postgres ./db/migrations_postgres
 
 # Create non-root user
 RUN adduser -D -g '' appuser

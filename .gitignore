@@ -85,3 +85,4 @@ __snapshots__/
 .cache/
 .playwright-mcp/
 .dev.pid
+infra/cdk.context.json
