@@ -17,13 +17,13 @@ export function TagList({ selectedTag, onTagSelect }: TagListProps) {
     );
   }
 
-  if (error || !data) {
+  if (error || !data || !data.tags) {
     return null;
   }
 
   const tags = data.tags;
 
-  if (tags.length === 0) {
+  if (!tags || tags.length === 0) {
     return null;
   }
 

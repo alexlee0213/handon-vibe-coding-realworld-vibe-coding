@@ -58,7 +58,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
             Read more...
           </Text>
           <Group gap={4}>
-            {article.tagList.map((tag) => (
+            {(article.tagList || []).map((tag) => (
               <Badge
                 key={tag}
                 variant="outline"

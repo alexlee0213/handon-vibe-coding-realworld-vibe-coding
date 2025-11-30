@@ -110,7 +110,7 @@ function ArticlePage() {
             {article.body}
           </Text>
 
-          {article.tagList.length > 0 && (
+          {article.tagList && article.tagList.length > 0 && (
             <>
               <Divider my="lg" />
               <Group gap={6}>
