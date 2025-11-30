@@ -15,6 +15,7 @@ export interface EcsStackProps extends cdk.StackProps {
   readonly dbEndpoint: string;
   readonly dbPort: string;
   readonly jwtSecretArn: string;
+  readonly dbSecurityGroup: ec2.ISecurityGroup;
 }
 
 export class EcsStack extends cdk.Stack {
@@ -26,7 +27,7 @@ export class EcsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: EcsStackProps) {
     super(scope, id, props);
 
-    const { environment, vpc, dbSecret, dbEndpoint, dbPort, jwtSecretArn } = props;
+    const { environment, vpc, dbSecret, dbEndpoint, dbPort, jwtSecretArn, dbSecurityGroup } = props;
 
     // Import existing ECR Repository (created manually or by previous deployment)
     // This avoids conflicts when the repository already exists
@@ -131,8 +132,12 @@ export class EcsStack extends cdk.Stack {
       allowAllOutbound: true,
     });
 
-    // Note: RDS security group already allows access from private subnets
-    // where ECS Fargate runs, so no additional ingress rule needed here
+    // Allow ECS service to connect to RDS PostgreSQL
+    dbSecurityGroup.connections.allowFrom(
+      serviceSecurityGroup,
+      ec2.Port.tcp(5432),
+      'Allow ECS Fargate to connect to RDS PostgreSQL'
+    );
 
     // Application Load Balancer
     this.loadBalancer = new elbv2.ApplicationLoadBalancer(this, 'BackendAlb', {
