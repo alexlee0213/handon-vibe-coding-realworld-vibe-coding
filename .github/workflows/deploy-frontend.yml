@@ -47,10 +47,12 @@ jobs:
       - name: Run tests
         run: npm run test -- --run
 
+      # Build with API URL - Set VITE_API_URL in GitHub Repository Variables
+      # Example: http://conduit-production-alb-123456789.ap-northeast-2.elb.amazonaws.com
       - name: Build for production
         run: npm run build
         env:
-          VITE_API_URL: ${{ vars.VITE_API_URL || 'https://api.example.com/api' }}
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

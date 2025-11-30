@@ -2,11 +2,13 @@
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
 import { VpcStack } from '../lib/vpc-stack';
+import { RdsStack } from '../lib/rds-stack';
+import { EcsStack } from '../lib/ecs-stack';
 
 const app = new cdk.App();
 
-// Get environment from context or default to 'staging'
-const environment = app.node.tryGetContext('environment') || 'staging';
+// Production Only - No staging environment for cost savings
+const environment = 'production';
 
 // AWS environment configuration
 const env: cdk.Environment = {
@@ -14,15 +16,42 @@ const env: cdk.Environment = {
   region: process.env.CDK_DEFAULT_REGION || process.env.AWS_REGION || 'ap-northeast-2',
 };
 
-// VPC Stack
-new VpcStack(app, `Conduit-${environment}-Vpc`, {
+const commonTags = {
+  Project: 'conduit',
+  Environment: environment,
+  ManagedBy: 'CDK',
+};
+
+// Stack 1: VPC with NAT Instance
+const vpcStack = new VpcStack(app, 'Conduit-Vpc', {
   env,
   environment,
-  description: `RealWorld Conduit VPC Stack (${environment})`,
-  tags: {
-    Project: 'conduit',
-    Environment: environment,
-  },
+  description: 'RealWorld Conduit VPC Stack with NAT Instance',
+  tags: commonTags,
 });
+
+// Stack 2: RDS PostgreSQL (depends on VPC)
+const rdsStack = new RdsStack(app, 'Conduit-Rds', {
+  env,
+  environment,
+  vpc: vpcStack.vpc,
+  description: 'RealWorld Conduit RDS PostgreSQL Stack',
+  tags: commonTags,
+});
+rdsStack.addDependency(vpcStack);
+
+// Stack 3: ECS Fargate (depends on VPC and RDS)
+const ecsStack = new EcsStack(app, 'Conduit-Ecs', {
+  env,
+  environment,
+  vpc: vpcStack.vpc,
+  dbSecret: rdsStack.dbSecret,
+  dbEndpoint: rdsStack.dbInstance.dbInstanceEndpointAddress,
+  dbPort: rdsStack.dbInstance.dbInstanceEndpointPort,
+  jwtSecretArn: cdk.Fn.importValue(`conduit-${environment}-jwt-secret-arn`),
+  description: 'RealWorld Conduit ECS Fargate Stack',
+  tags: commonTags,
+});
+ecsStack.addDependency(rdsStack);
 
 app.synth();
