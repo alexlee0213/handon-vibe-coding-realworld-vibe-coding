@@ -49,7 +49,7 @@ const ecsStack = new EcsStack(app, 'Conduit-Ecs', {
   dbEndpoint: rdsStack.dbInstance.dbInstanceEndpointAddress,
   dbPort: rdsStack.dbInstance.dbInstanceEndpointPort,
   jwtSecretArn: cdk.Fn.importValue(`conduit-${environment}-jwt-secret-arn`),
-  dbSecurityGroup: rdsStack.dbSecurityGroup,
+  dbSecurityGroupId: rdsStack.dbSecurityGroup.securityGroupId,
   description: 'RealWorld Conduit ECS Fargate Stack',
   tags: commonTags,
 });

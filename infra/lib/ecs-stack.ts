@@ -15,7 +15,7 @@ export interface EcsStackProps extends cdk.StackProps {
   readonly dbEndpoint: string;
   readonly dbPort: string;
   readonly jwtSecretArn: string;
-  readonly dbSecurityGroup: ec2.ISecurityGroup;
+  readonly dbSecurityGroupId: string;
 }
 
 export class EcsStack extends cdk.Stack {
@@ -27,7 +27,7 @@ export class EcsStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: EcsStackProps) {
     super(scope, id, props);
 
-    const { environment, vpc, dbSecret, dbEndpoint, dbPort, jwtSecretArn, dbSecurityGroup } = props;
+    const { environment, vpc, dbSecret, dbEndpoint, dbPort, jwtSecretArn, dbSecurityGroupId } = props;
 
     // Import existing ECR Repository (created manually or by previous deployment)
     // This avoids conflicts when the repository already exists
@@ -133,7 +133,13 @@ export class EcsStack extends cdk.Stack {
     });
 
     // Allow ECS service to connect to RDS PostgreSQL
-    dbSecurityGroup.connections.allowFrom(
+    // Import security group by ID to avoid cyclic dependency
+    const dbSecurityGroup = ec2.SecurityGroup.fromSecurityGroupId(
+      this,
+      'ImportedDbSecurityGroup',
+      dbSecurityGroupId
+    );
+    dbSecurityGroup.addIngressRule(
       serviceSecurityGroup,
       ec2.Port.tcp(5432),
       'Allow ECS Fargate to connect to RDS PostgreSQL'
