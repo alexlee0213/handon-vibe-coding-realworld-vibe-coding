@@ -337,7 +337,14 @@ All checks have passed successfully:
             gh pr merge "$PR_NUMBER" --squash --delete-branch
             log_success "PR #${PR_NUMBER} merged!"
         else
-            log_warning "PR #${PR_NUMBER} is not mergeable (status: ${PR_MERGEABLE}). Please resolve conflicts first."
+            log_error "PR #${PR_NUMBER} is not mergeable (status: ${PR_MERGEABLE})"
+            echo ""
+            echo "To resolve merge conflicts locally, run:"
+            echo "  gh pr checkout ${PR_NUMBER} && git fetch origin ${PR_BASE} && git merge origin/${PR_BASE}"
+            echo ""
+            echo "After resolving conflicts:"
+            echo "  git add . && git commit && git push"
+            echo ""
         fi
     else
         log_info "Submitting review..."
