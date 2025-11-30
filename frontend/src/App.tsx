@@ -11,8 +11,9 @@ import { theme } from './lib/theme';
 import { queryClient } from './lib/queryClient';
 import { routeTree } from './routeTree.gen';
 
-// Create router instance
-const router = createRouter({ routeTree });
+// Create router instance with basepath for GitHub Pages
+const basepath = import.meta.env.BASE_URL || '/';
+const router = createRouter({ routeTree, basepath });
 
 // Register router for type safety
 declare module '@tanstack/react-router' {
