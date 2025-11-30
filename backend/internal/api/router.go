@@ -59,6 +59,7 @@ func (r *Router) Setup() http.Handler {
 	userRepo := repository.NewSQLiteUserRepository(r.db, r.logger)
 	articleRepo := repository.NewSQLiteArticleRepository(r.db, r.logger)
 	commentRepo := repository.NewSQLiteCommentRepository(r.db, r.logger)
+	followRepo := repository.NewSQLiteFollowRepository(r.db, r.logger)
 
 	// Initialize services
 	authService := service.NewAuthService(
@@ -69,12 +70,14 @@ func (r *Router) Setup() http.Handler {
 	)
 	articleService := service.NewArticleService(articleRepo, userRepo, r.logger)
 	commentService := service.NewCommentService(commentRepo, articleRepo, userRepo, r.logger)
+	profileService := service.NewProfileService(userRepo, followRepo, r.logger)
 
 	// Initialize handlers
 	healthHandler := handler.NewHealthHandler()
 	userHandler := handler.NewUserHandler(authService, r.logger)
 	articleHandler := handler.NewArticleHandler(articleService, r.logger)
 	commentHandler := handler.NewCommentHandler(commentService, r.logger)
+	profileHandler := handler.NewProfileHandler(profileService, r.logger)
 
 	// Health check
 	r.mux.HandleFunc("GET /health", healthHandler.Health)
@@ -94,6 +97,13 @@ func (r *Router) Setup() http.Handler {
 	optionalAuthMw := middleware.OptionalAuth(authService)
 	r.mux.Handle("GET /api/user", authMw(http.HandlerFunc(userHandler.GetCurrentUser)))
 	r.mux.Handle("PUT /api/user", authMw(http.HandlerFunc(userHandler.UpdateUser)))
+
+	// Profile routes (public - with optional auth for following status)
+	r.mux.Handle("GET /api/profiles/{username}", optionalAuthMw(http.HandlerFunc(profileHandler.GetProfile)))
+
+	// Profile routes (authenticated)
+	r.mux.Handle("POST /api/profiles/{username}/follow", authMw(http.HandlerFunc(profileHandler.FollowUser)))
+	r.mux.Handle("DELETE /api/profiles/{username}/follow", authMw(http.HandlerFunc(profileHandler.UnfollowUser)))
 
 	// Article routes (public - with optional auth for favorited status)
 	r.mux.Handle("GET /api/articles", optionalAuthMw(http.HandlerFunc(articleHandler.ListArticles)))
