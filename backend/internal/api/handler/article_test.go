@@ -665,3 +665,220 @@ func TestGetTagsHandler(t *testing.T) {
 		}
 	})
 }
+
+// =============================================================================
+// TDD: POST /api/articles/{slug}/favorite (Favorite Article) Tests
+// =============================================================================
+
+func TestFavoriteArticleHandler(t *testing.T) {
+	t.Run("successfully favorites an article", func(t *testing.T) {
+		setup := newTestArticleHandler(t)
+		defer setup.db.Close()
+
+		author, _ := createTestUser(t, setup, "author@example.com", "author", "password123")
+		user, _ := createTestUser(t, setup, "user@example.com", "user", "password123")
+		article := createTestArticle(t, setup, author.ID, "Test Article", "Description", "Body", []string{"test"})
+
+		req := httptest.NewRequest(http.MethodPost, "/api/articles/"+article.Slug+"/favorite", nil)
+		ctx := context.WithValue(req.Context(), UserIDContextKey, user.ID)
+		req = req.WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		setup.handler.FavoriteArticle(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var response map[string]interface{}
+		json.NewDecoder(w.Body).Decode(&response)
+
+		articleResp := response["article"].(map[string]interface{})
+		if !articleResp["favorited"].(bool) {
+			t.Error("expected article to be favorited")
+		}
+		if articleResp["favoritesCount"].(float64) != 1 {
+			t.Errorf("expected favoritesCount to be 1, got %v", articleResp["favoritesCount"])
+		}
+	})
+
+	t.Run("returns 401 without authentication", func(t *testing.T) {
+		setup := newTestArticleHandler(t)
+		defer setup.db.Close()
+
+		req := httptest.NewRequest(http.MethodPost, "/api/articles/test-slug/favorite", nil)
+		w := httptest.NewRecorder()
+
+		setup.handler.FavoriteArticle(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("expected status %d, got %d", http.StatusUnauthorized, w.Code)
+		}
+	})
+
+	t.Run("returns 404 for non-existent article", func(t *testing.T) {
+		setup := newTestArticleHandler(t)
+		defer setup.db.Close()
+
+		user, _ := createTestUser(t, setup, "user@example.com", "user", "password123")
+
+		req := httptest.NewRequest(http.MethodPost, "/api/articles/non-existent-slug/favorite", nil)
+		ctx := context.WithValue(req.Context(), UserIDContextKey, user.ID)
+		req = req.WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		setup.handler.FavoriteArticle(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
+		}
+	})
+
+	t.Run("favoriting already favorited article returns success", func(t *testing.T) {
+		setup := newTestArticleHandler(t)
+		defer setup.db.Close()
+
+		author, _ := createTestUser(t, setup, "author@example.com", "author", "password123")
+		user, _ := createTestUser(t, setup, "user@example.com", "user", "password123")
+		article := createTestArticle(t, setup, author.ID, "Test Article", "Description", "Body", []string{"test"})
+
+		// First favorite
+		req := httptest.NewRequest(http.MethodPost, "/api/articles/"+article.Slug+"/favorite", nil)
+		ctx := context.WithValue(req.Context(), UserIDContextKey, user.ID)
+		req = req.WithContext(ctx)
+		w := httptest.NewRecorder()
+		setup.handler.FavoriteArticle(w, req)
+
+		// Second favorite (should still succeed)
+		req = httptest.NewRequest(http.MethodPost, "/api/articles/"+article.Slug+"/favorite", nil)
+		ctx = context.WithValue(req.Context(), UserIDContextKey, user.ID)
+		req = req.WithContext(ctx)
+		w = httptest.NewRecorder()
+		setup.handler.FavoriteArticle(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var response map[string]interface{}
+		json.NewDecoder(w.Body).Decode(&response)
+
+		articleResp := response["article"].(map[string]interface{})
+		// Should still be favorited with count of 1
+		if !articleResp["favorited"].(bool) {
+			t.Error("expected article to be favorited")
+		}
+		if articleResp["favoritesCount"].(float64) != 1 {
+			t.Errorf("expected favoritesCount to be 1, got %v", articleResp["favoritesCount"])
+		}
+	})
+}
+
+// =============================================================================
+// TDD: DELETE /api/articles/{slug}/favorite (Unfavorite Article) Tests
+// =============================================================================
+
+func TestUnfavoriteArticleHandler(t *testing.T) {
+	t.Run("successfully unfavorites an article", func(t *testing.T) {
+		setup := newTestArticleHandler(t)
+		defer setup.db.Close()
+
+		author, _ := createTestUser(t, setup, "author@example.com", "author", "password123")
+		user, _ := createTestUser(t, setup, "user@example.com", "user", "password123")
+		article := createTestArticle(t, setup, author.ID, "Test Article", "Description", "Body", []string{"test"})
+
+		// First favorite the article
+		req := httptest.NewRequest(http.MethodPost, "/api/articles/"+article.Slug+"/favorite", nil)
+		ctx := context.WithValue(req.Context(), UserIDContextKey, user.ID)
+		req = req.WithContext(ctx)
+		w := httptest.NewRecorder()
+		setup.handler.FavoriteArticle(w, req)
+
+		// Now unfavorite
+		req = httptest.NewRequest(http.MethodDelete, "/api/articles/"+article.Slug+"/favorite", nil)
+		ctx = context.WithValue(req.Context(), UserIDContextKey, user.ID)
+		req = req.WithContext(ctx)
+		w = httptest.NewRecorder()
+
+		setup.handler.UnfavoriteArticle(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var response map[string]interface{}
+		json.NewDecoder(w.Body).Decode(&response)
+
+		articleResp := response["article"].(map[string]interface{})
+		if articleResp["favorited"].(bool) {
+			t.Error("expected article to not be favorited")
+		}
+		if articleResp["favoritesCount"].(float64) != 0 {
+			t.Errorf("expected favoritesCount to be 0, got %v", articleResp["favoritesCount"])
+		}
+	})
+
+	t.Run("returns 401 without authentication", func(t *testing.T) {
+		setup := newTestArticleHandler(t)
+		defer setup.db.Close()
+
+		req := httptest.NewRequest(http.MethodDelete, "/api/articles/test-slug/favorite", nil)
+		w := httptest.NewRecorder()
+
+		setup.handler.UnfavoriteArticle(w, req)
+
+		if w.Code != http.StatusUnauthorized {
+			t.Errorf("expected status %d, got %d", http.StatusUnauthorized, w.Code)
+		}
+	})
+
+	t.Run("returns 404 for non-existent article", func(t *testing.T) {
+		setup := newTestArticleHandler(t)
+		defer setup.db.Close()
+
+		user, _ := createTestUser(t, setup, "user@example.com", "user", "password123")
+
+		req := httptest.NewRequest(http.MethodDelete, "/api/articles/non-existent-slug/favorite", nil)
+		ctx := context.WithValue(req.Context(), UserIDContextKey, user.ID)
+		req = req.WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		setup.handler.UnfavoriteArticle(w, req)
+
+		if w.Code != http.StatusNotFound {
+			t.Errorf("expected status %d, got %d", http.StatusNotFound, w.Code)
+		}
+	})
+
+	t.Run("unfavoriting non-favorited article returns success", func(t *testing.T) {
+		setup := newTestArticleHandler(t)
+		defer setup.db.Close()
+
+		author, _ := createTestUser(t, setup, "author@example.com", "author", "password123")
+		user, _ := createTestUser(t, setup, "user@example.com", "user", "password123")
+		article := createTestArticle(t, setup, author.ID, "Test Article", "Description", "Body", []string{"test"})
+
+		// Unfavorite without favoriting first (should still succeed)
+		req := httptest.NewRequest(http.MethodDelete, "/api/articles/"+article.Slug+"/favorite", nil)
+		ctx := context.WithValue(req.Context(), UserIDContextKey, user.ID)
+		req = req.WithContext(ctx)
+		w := httptest.NewRecorder()
+
+		setup.handler.UnfavoriteArticle(w, req)
+
+		if w.Code != http.StatusOK {
+			t.Errorf("expected status %d, got %d: %s", http.StatusOK, w.Code, w.Body.String())
+		}
+
+		var response map[string]interface{}
+		json.NewDecoder(w.Body).Decode(&response)
+
+		articleResp := response["article"].(map[string]interface{})
+		if articleResp["favorited"].(bool) {
+			t.Error("expected article to not be favorited")
+		}
+		if articleResp["favoritesCount"].(float64) != 0 {
+			t.Errorf("expected favoritesCount to be 0, got %v", articleResp["favoritesCount"])
+		}
+	})
+}

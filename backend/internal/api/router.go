@@ -115,6 +115,10 @@ func (r *Router) Setup() http.Handler {
 	r.mux.Handle("DELETE /api/articles/{slug}", authMw(http.HandlerFunc(articleHandler.DeleteArticle)))
 	r.mux.Handle("GET /api/articles/feed", authMw(http.HandlerFunc(articleHandler.GetFeed)))
 
+	// Favorite routes (authenticated)
+	r.mux.Handle("POST /api/articles/{slug}/favorite", authMw(http.HandlerFunc(articleHandler.FavoriteArticle)))
+	r.mux.Handle("DELETE /api/articles/{slug}/favorite", authMw(http.HandlerFunc(articleHandler.UnfavoriteArticle)))
+
 	// Tags route (public)
 	r.mux.HandleFunc("GET /api/tags", articleHandler.GetTags)
 

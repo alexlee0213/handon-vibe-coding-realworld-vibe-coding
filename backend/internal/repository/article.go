@@ -22,6 +22,8 @@ type ArticleRepository interface {
 	GetFeed(ctx context.Context, userID int64, params *domain.ArticleFeedParams) ([]*domain.Article, int, error)
 	SlugExists(ctx context.Context, slug string) bool
 	GetAllTags(ctx context.Context) ([]string, error)
+	FavoriteArticle(ctx context.Context, articleID, userID int64) error
+	UnfavoriteArticle(ctx context.Context, articleID, userID int64) error
 }
 
 // SQLiteArticleRepository implements ArticleRepository for SQLite
@@ -633,4 +635,76 @@ func (r *SQLiteArticleRepository) GetAllTags(ctx context.Context) ([]string, err
 	}
 
 	return tags, nil
+}
+
+// FavoriteArticle adds a favorite relationship between a user and an article
+func (r *SQLiteArticleRepository) FavoriteArticle(ctx context.Context, articleID, userID int64) error {
+	// Check if already favorited
+	var exists int
+	err := r.db.QueryRowContext(ctx, `
+		SELECT 1 FROM favorites WHERE article_id = ? AND user_id = ?
+	`, articleID, userID).Scan(&exists)
+	if err == nil {
+		return domain.ErrArticleAlreadyFavorited
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		r.logger.Error("failed to check favorite exists", "error", err)
+		return errors.Join(domain.ErrDatabase, err)
+	}
+
+	// Insert favorite
+	_, err = r.db.ExecContext(ctx, `
+		INSERT INTO favorites (article_id, user_id, created_at)
+		VALUES (?, ?, ?)
+	`, articleID, userID, time.Now())
+	if err != nil {
+		if isUniqueConstraintError(err) {
+			return domain.ErrArticleAlreadyFavorited
+		}
+		r.logger.Error("failed to favorite article",
+			"error", err,
+			"article_id", articleID,
+			"user_id", userID,
+		)
+		return errors.Join(domain.ErrDatabase, err)
+	}
+
+	r.logger.Info("article favorited",
+		"article_id", articleID,
+		"user_id", userID,
+	)
+
+	return nil
+}
+
+// UnfavoriteArticle removes a favorite relationship between a user and an article
+func (r *SQLiteArticleRepository) UnfavoriteArticle(ctx context.Context, articleID, userID int64) error {
+	result, err := r.db.ExecContext(ctx, `
+		DELETE FROM favorites WHERE article_id = ? AND user_id = ?
+	`, articleID, userID)
+	if err != nil {
+		r.logger.Error("failed to unfavorite article",
+			"error", err,
+			"article_id", articleID,
+			"user_id", userID,
+		)
+		return errors.Join(domain.ErrDatabase, err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		r.logger.Error("failed to get rows affected", "error", err)
+		return errors.Join(domain.ErrDatabase, err)
+	}
+
+	if rowsAffected == 0 {
+		return domain.ErrArticleNotFavorited
+	}
+
+	r.logger.Info("article unfavorited",
+		"article_id", articleID,
+		"user_id", userID,
+	)
+
+	return nil
 }

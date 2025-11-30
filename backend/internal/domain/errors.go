@@ -15,8 +15,10 @@ var (
 	ErrInvalidCredentials   = errors.New("invalid email or password")
 
 	// Article errors
-	ErrArticleNotFound      = errors.New("article not found")
-	ErrArticleAlreadyExists = errors.New("article with this slug already exists")
+	ErrArticleNotFound         = errors.New("article not found")
+	ErrArticleAlreadyExists    = errors.New("article with this slug already exists")
+	ErrArticleAlreadyFavorited = errors.New("article already favorited")
+	ErrArticleNotFavorited     = errors.New("article not favorited")
 
 	// Comment errors
 	ErrCommentNotFound = errors.New("comment not found")

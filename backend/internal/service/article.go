@@ -250,6 +250,100 @@ func (s *ArticleService) GetAllTags(ctx context.Context) ([]string, error) {
 	return s.articleRepo.GetAllTags(ctx)
 }
 
+// FavoriteArticle adds a favorite to an article
+func (s *ArticleService) FavoriteArticle(ctx context.Context, slug string, userID int64) (*domain.Article, error) {
+	// Get article by slug
+	article, err := s.articleRepo.GetArticleBySlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add favorite
+	if err := s.articleRepo.FavoriteArticle(ctx, article.ID, userID); err != nil {
+		if err == domain.ErrArticleAlreadyFavorited {
+			// Article already favorited - just return the article
+			s.logger.Debug("article already favorited",
+				"article_id", article.ID,
+				"user_id", userID,
+			)
+		} else {
+			return nil, err
+		}
+	} else {
+		s.logger.Info("article favorited",
+			"article_id", article.ID,
+			"slug", slug,
+			"user_id", userID,
+		)
+	}
+
+	// Reload article to get updated favorites count
+	article, err = s.articleRepo.GetArticleBySlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set favorited status
+	article.Favorited = true
+
+	// Load author information
+	author, err := s.userRepo.GetUserByID(ctx, article.AuthorID)
+	if err != nil {
+		s.logger.Error("failed to get article author", "error", err, "author_id", article.AuthorID)
+		return nil, err
+	}
+	article.Author = author
+
+	return article, nil
+}
+
+// UnfavoriteArticle removes a favorite from an article
+func (s *ArticleService) UnfavoriteArticle(ctx context.Context, slug string, userID int64) (*domain.Article, error) {
+	// Get article by slug
+	article, err := s.articleRepo.GetArticleBySlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove favorite
+	if err := s.articleRepo.UnfavoriteArticle(ctx, article.ID, userID); err != nil {
+		if err == domain.ErrArticleNotFavorited {
+			// Article wasn't favorited - just return the article
+			s.logger.Debug("article was not favorited",
+				"article_id", article.ID,
+				"user_id", userID,
+			)
+		} else {
+			return nil, err
+		}
+	} else {
+		s.logger.Info("article unfavorited",
+			"article_id", article.ID,
+			"slug", slug,
+			"user_id", userID,
+		)
+	}
+
+	// Reload article to get updated favorites count
+	article, err = s.articleRepo.GetArticleBySlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set favorited status
+	article.Favorited = false
+
+	// Load author information
+	author, err := s.userRepo.GetUserByID(ctx, article.AuthorID)
+	if err != nil {
+		s.logger.Error("failed to get article author", "error", err, "author_id", article.AuthorID)
+		return nil, err
+	}
+	article.Author = author
+
+	return article, nil
+}
+
 // validateCreateArticleInput validates article creation input
 func (s *ArticleService) validateCreateArticleInput(input *domain.CreateArticleInput) error {
 	validationErrors := domain.NewValidationErrors()
