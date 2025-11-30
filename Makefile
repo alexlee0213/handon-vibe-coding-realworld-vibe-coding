@@ -1,6 +1,6 @@
 .PHONY: install dev dev-backend dev-frontend test test-watch test-coverage lint typecheck build \
         docker-build docker-up docker-down db-init db-up db-down migrate migrate-down migrate-status \
-        deploy deploy-frontend clean help
+        deploy deploy-frontend clean help pr-review
 
 # Default environment
 ENV ?= development
@@ -164,6 +164,17 @@ deploy-frontend:
 	@echo "📤 Deploy frontend/dist to GitHub Pages"
 
 # ============================================================================
+# PR Review
+# ============================================================================
+
+pr-review:
+ifndef PR
+	@echo "Usage: make pr-review PR=<number> [OPTS='--dry-run --verbose']"
+	@exit 1
+endif
+	@./scripts/pr-review.sh $(PR) $(OPTS)
+
+# ============================================================================
 # Cleanup
 # ============================================================================
 
@@ -223,6 +234,10 @@ help:
 	@echo "Deployment:"
 	@echo "  make deploy           - Deploy with AWS CDK"
 	@echo "  make deploy-frontend  - Deploy frontend to GitHub Pages"
+	@echo ""
+	@echo "PR Review:"
+	@echo "  make pr-review PR=42              - Auto review PR #42"
+	@echo "  make pr-review PR=42 OPTS='--dry-run'  - Dry run mode"
 	@echo ""
 	@echo "Cleanup:"
 	@echo "  make clean            - Remove build artifacts"

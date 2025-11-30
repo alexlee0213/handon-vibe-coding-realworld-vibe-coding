@@ -77,6 +77,16 @@ docker-compose.override.yml
 __snapshots__/
 
 # ===================
+# Git Worktrees
+# ===================
+.worktrees/
+
+# ===================
+# PR Review
+# ===================
+pr-review.log
+
+# ===================
 # Misc
 # ===================
 *.log
