@@ -125,8 +125,9 @@ func newTestArticleHandler(t *testing.T) *articleTestSetup {
 	logger := newArticleTestLogger()
 	userRepo := repository.NewSQLiteUserRepository(db, logger)
 	articleRepo := repository.NewSQLiteArticleRepository(db, logger)
+	favoriteRepo := repository.NewSQLiteFavoriteRepository(db, logger)
 	authService := service.NewAuthService(userRepo, "test-jwt-secret", 24*time.Hour, logger)
-	articleService := service.NewArticleService(articleRepo, userRepo, logger)
+	articleService := service.NewArticleService(articleRepo, userRepo, favoriteRepo, logger)
 	articleHandler := NewArticleHandler(articleService, logger)
 
 	return &articleTestSetup{

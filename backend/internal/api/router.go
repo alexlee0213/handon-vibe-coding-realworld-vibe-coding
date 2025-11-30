@@ -60,6 +60,7 @@ func (r *Router) Setup() http.Handler {
 	articleRepo := repository.NewSQLiteArticleRepository(r.db, r.logger)
 	commentRepo := repository.NewSQLiteCommentRepository(r.db, r.logger)
 	followRepo := repository.NewSQLiteFollowRepository(r.db, r.logger)
+	favoriteRepo := repository.NewSQLiteFavoriteRepository(r.db, r.logger)
 
 	// Initialize services
 	authService := service.NewAuthService(
@@ -68,7 +69,7 @@ func (r *Router) Setup() http.Handler {
 		r.config.JWT.Expiry,
 		r.logger,
 	)
-	articleService := service.NewArticleService(articleRepo, userRepo, r.logger)
+	articleService := service.NewArticleService(articleRepo, userRepo, favoriteRepo, r.logger)
 	commentService := service.NewCommentService(commentRepo, articleRepo, userRepo, r.logger)
 	profileService := service.NewProfileService(userRepo, followRepo, r.logger)
 
@@ -114,6 +115,10 @@ func (r *Router) Setup() http.Handler {
 	r.mux.Handle("PUT /api/articles/{slug}", authMw(http.HandlerFunc(articleHandler.UpdateArticle)))
 	r.mux.Handle("DELETE /api/articles/{slug}", authMw(http.HandlerFunc(articleHandler.DeleteArticle)))
 	r.mux.Handle("GET /api/articles/feed", authMw(http.HandlerFunc(articleHandler.GetFeed)))
+
+	// Favorite routes (authenticated)
+	r.mux.Handle("POST /api/articles/{slug}/favorite", authMw(http.HandlerFunc(articleHandler.FavoriteArticle)))
+	r.mux.Handle("DELETE /api/articles/{slug}/favorite", authMw(http.HandlerFunc(articleHandler.UnfavoriteArticle)))
 
 	// Tags route (public)
 	r.mux.HandleFunc("GET /api/tags", articleHandler.GetTags)

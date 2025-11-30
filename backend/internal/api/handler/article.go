@@ -258,6 +258,60 @@ func (h *ArticleHandler) GetTags(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+// FavoriteArticle handles POST /api/articles/{slug}/favorite
+func (h *ArticleHandler) FavoriteArticle(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(UserIDContextKey).(int64)
+	if !ok {
+		h.writeError(w, http.StatusUnauthorized, "token", "authorization required")
+		return
+	}
+
+	slug := h.extractSlugForFavorite(r.URL.Path)
+	if slug == "" {
+		h.writeError(w, http.StatusNotFound, "article", "article not found")
+		return
+	}
+
+	article, err := h.articleService.FavoriteArticle(r.Context(), slug, userID)
+	if err != nil {
+		h.handleServiceError(w, err)
+		return
+	}
+
+	h.writeArticleResponse(w, http.StatusOK, article)
+}
+
+// UnfavoriteArticle handles DELETE /api/articles/{slug}/favorite
+func (h *ArticleHandler) UnfavoriteArticle(w http.ResponseWriter, r *http.Request) {
+	userID, ok := r.Context().Value(UserIDContextKey).(int64)
+	if !ok {
+		h.writeError(w, http.StatusUnauthorized, "token", "authorization required")
+		return
+	}
+
+	slug := h.extractSlugForFavorite(r.URL.Path)
+	if slug == "" {
+		h.writeError(w, http.StatusNotFound, "article", "article not found")
+		return
+	}
+
+	article, err := h.articleService.UnfavoriteArticle(r.Context(), slug, userID)
+	if err != nil {
+		h.handleServiceError(w, err)
+		return
+	}
+
+	h.writeArticleResponse(w, http.StatusOK, article)
+}
+
+// extractSlugForFavorite extracts the slug from paths like /api/articles/{slug}/favorite
+func (h *ArticleHandler) extractSlugForFavorite(path string) string {
+	// Path format: /api/articles/{slug}/favorite
+	path = strings.TrimPrefix(path, "/api/articles/")
+	path = strings.TrimSuffix(path, "/favorite")
+	return strings.TrimSpace(path)
+}
+
 // extractSlugFromPath extracts the slug from the URL path
 func (h *ArticleHandler) extractSlugFromPath(path, prefix string) string {
 	slug := strings.TrimPrefix(path, prefix)

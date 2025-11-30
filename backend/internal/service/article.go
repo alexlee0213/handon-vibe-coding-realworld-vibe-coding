@@ -12,21 +12,24 @@ import (
 
 // ArticleService handles article business logic
 type ArticleService struct {
-	articleRepo repository.ArticleRepository
-	userRepo    repository.UserRepository
-	logger      *slog.Logger
+	articleRepo  repository.ArticleRepository
+	userRepo     repository.UserRepository
+	favoriteRepo repository.FavoriteRepository
+	logger       *slog.Logger
 }
 
 // NewArticleService creates a new ArticleService instance
 func NewArticleService(
 	articleRepo repository.ArticleRepository,
 	userRepo repository.UserRepository,
+	favoriteRepo repository.FavoriteRepository,
 	logger *slog.Logger,
 ) *ArticleService {
 	return &ArticleService{
-		articleRepo: articleRepo,
-		userRepo:    userRepo,
-		logger:      logger,
+		articleRepo:  articleRepo,
+		userRepo:     userRepo,
+		favoriteRepo: favoriteRepo,
+		logger:       logger,
 	}
 }
 
@@ -269,4 +272,80 @@ func (s *ArticleService) validateCreateArticleInput(input *domain.CreateArticleI
 	}
 
 	return nil
+}
+
+// FavoriteArticle adds a favorite to an article
+func (s *ArticleService) FavoriteArticle(ctx context.Context, slug string, userID int64) (*domain.Article, error) {
+	// Get the article (tags and favoritesCount already loaded by repository)
+	article, err := s.articleRepo.GetArticleBySlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	// Add favorite
+	if err := s.favoriteRepo.FavoriteArticle(ctx, userID, article.ID); err != nil {
+		return nil, err
+	}
+
+	// Update favorite status for the response
+	article.Favorited = true
+	article.FavoritesCount, err = s.favoriteRepo.GetFavoritesCount(ctx, article.ID)
+	if err != nil {
+		s.logger.Error("failed to get favorites count", "error", err, "article_id", article.ID)
+		// Don't fail the request, just log the error
+	}
+
+	// Load author information
+	author, err := s.userRepo.GetUserByID(ctx, article.AuthorID)
+	if err != nil {
+		s.logger.Error("failed to get article author", "error", err, "author_id", article.AuthorID)
+		return nil, err
+	}
+	article.Author = author
+
+	s.logger.Info("article favorited",
+		"article_id", article.ID,
+		"slug", slug,
+		"user_id", userID,
+	)
+
+	return article, nil
+}
+
+// UnfavoriteArticle removes a favorite from an article
+func (s *ArticleService) UnfavoriteArticle(ctx context.Context, slug string, userID int64) (*domain.Article, error) {
+	// Get the article (tags and favoritesCount already loaded by repository)
+	article, err := s.articleRepo.GetArticleBySlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove favorite
+	if err := s.favoriteRepo.UnfavoriteArticle(ctx, userID, article.ID); err != nil {
+		return nil, err
+	}
+
+	// Update favorite status for the response
+	article.Favorited = false
+	article.FavoritesCount, err = s.favoriteRepo.GetFavoritesCount(ctx, article.ID)
+	if err != nil {
+		s.logger.Error("failed to get favorites count", "error", err, "article_id", article.ID)
+		// Don't fail the request, just log the error
+	}
+
+	// Load author information
+	author, err := s.userRepo.GetUserByID(ctx, article.AuthorID)
+	if err != nil {
+		s.logger.Error("failed to get article author", "error", err, "author_id", article.AuthorID)
+		return nil, err
+	}
+	article.Author = author
+
+	s.logger.Info("article unfavorited",
+		"article_id", article.ID,
+		"slug", slug,
+		"user_id", userID,
+	)
+
+	return article, nil
 }
