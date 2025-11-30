@@ -1,0 +1,33 @@
+# Lefthook configuration for RealWorld Conduit
+# https://github.com/evilmartians/lefthook
+
+pre-commit:
+  parallel: true
+  commands:
+    backend-fmt:
+      glob: "backend/**/*.go"
+      run: cd backend && go fmt ./...
+      stage_fixed: true
+
+    backend-vet:
+      glob: "backend/**/*.go"
+      run: cd backend && go vet ./...
+
+    frontend-lint:
+      glob: "frontend/**/*.{ts,tsx,js,jsx}"
+      run: cd frontend && npm run lint
+
+    frontend-typecheck:
+      glob: "frontend/**/*.{ts,tsx}"
+      run: cd frontend && npm run typecheck
+
+pre-push:
+  parallel: true
+  commands:
+    backend-test:
+      glob: "backend/**/*.go"
+      run: cd backend && go test -short ./...
+
+    frontend-test:
+      glob: "frontend/**/*.{ts,tsx,js,jsx}"
+      run: cd frontend && npm run test -- --run
