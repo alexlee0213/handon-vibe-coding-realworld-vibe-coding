@@ -84,3 +84,4 @@ __snapshots__/
 *.temp
 .cache/
 .playwright-mcp/
+.dev.pid
