@@ -57,6 +57,7 @@ func initDatabase(databaseURL string) (*sql.DB, error) {
 func (r *Router) Setup() http.Handler {
 	// Initialize repositories
 	userRepo := repository.NewSQLiteUserRepository(r.db, r.logger)
+	articleRepo := repository.NewSQLiteArticleRepository(r.db, r.logger)
 
 	// Initialize services
 	authService := service.NewAuthService(
@@ -65,10 +66,12 @@ func (r *Router) Setup() http.Handler {
 		r.config.JWT.Expiry,
 		r.logger,
 	)
+	articleService := service.NewArticleService(articleRepo, userRepo, r.logger)
 
 	// Initialize handlers
 	healthHandler := handler.NewHealthHandler()
 	userHandler := handler.NewUserHandler(authService, r.logger)
+	articleHandler := handler.NewArticleHandler(articleService, r.logger)
 
 	// Health check
 	r.mux.HandleFunc("GET /health", healthHandler.Health)
@@ -85,8 +88,22 @@ func (r *Router) Setup() http.Handler {
 
 	// User routes (authenticated)
 	authMw := middleware.Auth(authService)
+	optionalAuthMw := middleware.OptionalAuth(authService)
 	r.mux.Handle("GET /api/user", authMw(http.HandlerFunc(userHandler.GetCurrentUser)))
 	r.mux.Handle("PUT /api/user", authMw(http.HandlerFunc(userHandler.UpdateUser)))
+
+	// Article routes (public - with optional auth for favorited status)
+	r.mux.Handle("GET /api/articles", optionalAuthMw(http.HandlerFunc(articleHandler.ListArticles)))
+	r.mux.Handle("GET /api/articles/{slug}", optionalAuthMw(http.HandlerFunc(articleHandler.GetArticle)))
+
+	// Article routes (authenticated)
+	r.mux.Handle("POST /api/articles", authMw(http.HandlerFunc(articleHandler.CreateArticle)))
+	r.mux.Handle("PUT /api/articles/{slug}", authMw(http.HandlerFunc(articleHandler.UpdateArticle)))
+	r.mux.Handle("DELETE /api/articles/{slug}", authMw(http.HandlerFunc(articleHandler.DeleteArticle)))
+	r.mux.Handle("GET /api/articles/feed", authMw(http.HandlerFunc(articleHandler.GetFeed)))
+
+	// Tags route (public)
+	r.mux.HandleFunc("GET /api/tags", articleHandler.GetTags)
 
 	// Apply middleware chain
 	var h http.Handler = r.mux
