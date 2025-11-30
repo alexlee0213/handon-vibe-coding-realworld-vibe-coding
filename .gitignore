@@ -83,3 +83,4 @@ __snapshots__/
 *.tmp
 *.temp
 .cache/
+.playwright-mcp/
