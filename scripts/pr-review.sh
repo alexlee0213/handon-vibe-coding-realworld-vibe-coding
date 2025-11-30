@@ -146,6 +146,13 @@ PR_AUTHOR=$(echo "$PR_JSON" | jq -r '.author.login')
 PR_ADDITIONS=$(echo "$PR_JSON" | jq -r '.additions')
 PR_DELETIONS=$(echo "$PR_JSON" | jq -r '.deletions')
 
+# Get current GitHub user
+CURRENT_USER=$(gh api user --jq '.login' 2>/dev/null || echo "")
+IS_OWN_PR=false
+if [ "$CURRENT_USER" == "$PR_AUTHOR" ]; then
+    IS_OWN_PR=true
+fi
+
 echo ""
 echo "=============================================="
 echo "PR #${PR_NUMBER}: ${PR_TITLE}"
@@ -301,6 +308,10 @@ All checks have passed successfully:
         echo ""
         echo "$REVIEW_BODY"
         echo ""
+    elif $IS_OWN_PR; then
+        log_warning "Cannot approve your own PR. Adding comment instead..."
+        gh pr comment "$PR_NUMBER" --body "$REVIEW_BODY"
+        log_success "PR #${PR_NUMBER} - comment added (all checks passed)"
     else
         log_info "Submitting review..."
         gh pr review "$PR_NUMBER" --approve --body "$REVIEW_BODY"
@@ -326,6 +337,10 @@ ${REVIEW_COMMENTS}
         echo ""
         echo -e "$REVIEW_BODY"
         echo ""
+    elif $IS_OWN_PR; then
+        log_warning "Cannot request changes on your own PR. Adding comment instead..."
+        gh pr comment "$PR_NUMBER" --body "$(echo -e "$REVIEW_BODY")"
+        log_warning "PR #${PR_NUMBER} - comment added (checks failed)"
     else
         log_info "Submitting review..."
         gh pr review "$PR_NUMBER" --request-changes --body "$(echo -e "$REVIEW_BODY")"
