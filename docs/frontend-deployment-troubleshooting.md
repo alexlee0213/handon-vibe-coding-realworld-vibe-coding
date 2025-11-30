@@ -11,6 +11,10 @@
 5. [GitHub Actions 빌드 오류 (global 미정의)](#5-github-actions-빌드-오류-global-미정의)
 6. [GitHub Pages SPA 라우팅](#6-github-pages-spa-라우팅)
 7. [CORS 설정 문제](#7-cors-설정-문제)
+8. [Mixed Content 오류 (HTTPS → HTTP)](#8-mixed-content-오류-https--http)
+9. [GitHub Pages 환경 보호 규칙 오류](#9-github-pages-환경-보호-규칙-오류)
+10. [Vite 환경변수 파일 로드 실패](#10-vite-환경변수-파일-로드-실패)
+11. [TanStack Router basepath 설정](#11-tanstack-router-basepath-설정)
 
 ---
 
@@ -390,6 +394,213 @@ export const api = ky.create({
     'Content-Type': 'application/json',
   },
 });
+```
+
+---
+
+## 8. Mixed Content 오류 (HTTPS → HTTP)
+
+### 오류 메시지 (브라우저 콘솔)
+
+```
+Mixed Content: The page at 'https://alexlee0213.github.io/...' was loaded over HTTPS,
+but requested an insecure resource 'http://your-alb.elb.amazonaws.com/api/...'.
+This request has been blocked; the content must be served over HTTPS.
+```
+
+### 원인
+
+GitHub Pages는 HTTPS로 제공되지만, 백엔드 API(ALB)가 HTTP로만 제공될 때 브라우저가 보안상의 이유로 요청을 차단합니다.
+
+### 해결 방법
+
+**Option 1**: CloudFront 추가 (권장)
+
+ALB 앞에 CloudFront를 배치하여 HTTPS 엔드포인트를 제공합니다.
+
+```typescript
+// infra/lib/cloudfront-stack.ts
+import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
+import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
+
+this.distribution = new cloudfront.Distribution(this, 'ApiDistribution', {
+  defaultBehavior: {
+    origin: new origins.HttpOrigin(albDnsName, {
+      protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+      httpPort: 80,
+    }),
+    viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+    allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+    cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+    originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+  },
+});
+```
+
+**Option 2**: ALB에 HTTPS 리스너 추가
+
+도메인과 ACM 인증서가 필요합니다.
+
+### 결과
+
+- **Before**: `http://alb-xxxxx.elb.amazonaws.com/api` (HTTP)
+- **After**: `https://xxxxx.cloudfront.net/api` (HTTPS via CloudFront)
+
+---
+
+## 9. GitHub Pages 환경 보호 규칙 오류
+
+### 오류 메시지 (GitHub Actions)
+
+```
+Branch "main" is not allowed to deploy to github-pages due to environment protection rules.
+```
+
+### 원인
+
+GitHub Pages 환경에 배포 브랜치 정책이 설정되어 있어, `main` 브랜치에서의 배포가 차단됩니다.
+
+### 해결 방법
+
+**Option 1**: GitHub CLI로 브랜치 정책 추가
+
+```bash
+# 현재 정책 확인
+gh api repos/{owner}/{repo}/environments/github-pages/deployment-branch-policies
+
+# main 브랜치 추가
+gh api repos/{owner}/{repo}/environments/github-pages/deployment-branch-policies \
+  -X POST \
+  -f name="main" \
+  -f type="branch"
+```
+
+**Option 2**: GitHub UI에서 설정
+
+1. Repository Settings → Environments → github-pages
+2. Deployment branches → Add deployment branch rule
+3. `main` 브랜치 추가
+
+### 확인
+
+```bash
+# 실패한 워크플로우 재실행
+gh run rerun {run_id}
+```
+
+---
+
+## 10. Vite 환경변수 파일 로드 실패
+
+### 문제
+
+`.env.production` 파일을 생성했지만 빌드 시 환경변수가 적용되지 않음.
+
+```bash
+# .env.production 내용
+VITE_API_URL=https://example.cloudfront.net/api
+
+# 빌드 후 확인 - 여전히 localhost 사용
+grep -o 'http://localhost[^"]*api' dist/assets/*.js
+# 출력: http://localhost:8080/api
+```
+
+### 원인
+
+Vite가 `.env.production` 파일을 자동으로 로드하지 않는 경우가 있습니다. 파일 권한, 인코딩, 또는 Vite 버전 문제일 수 있습니다.
+
+### 해결 방법
+
+**Option 1**: predeploy 스크립트에서 직접 환경변수 설정 (권장)
+
+```json
+// package.json
+{
+  "scripts": {
+    "predeploy": "VITE_API_URL=https://xxxxx.cloudfront.net/api npm run build",
+    "deploy": "gh-pages -d dist"
+  }
+}
+```
+
+**Option 2**: 빌드 명령어에서 직접 전달
+
+```bash
+VITE_API_URL=https://xxxxx.cloudfront.net/api npm run build
+```
+
+**Option 3**: GitHub Actions에서 환경변수 설정
+
+```yaml
+# .github/workflows/deploy-frontend.yml
+- name: Build for production
+  env:
+    VITE_API_URL: https://xxxxx.cloudfront.net/api
+  run: npm run build
+```
+
+### 확인
+
+```bash
+# 빌드 후 API URL 확인
+grep -o 'https://[^"]*cloudfront[^"]*api' dist/assets/*.js
+```
+
+---
+
+## 11. TanStack Router basepath 설정
+
+### 문제
+
+GitHub Pages 배포 후 페이지가 "Not Found"로 표시됨.
+
+```yaml
+# 페이지 스냅샷
+- main:
+  - paragraph: Not Found
+```
+
+### 원인
+
+GitHub Pages는 서브디렉토리(`/repo-name/`)에서 호스팅되므로, TanStack Router가 올바른 base path를 인식하지 못합니다.
+
+### 해결 방법
+
+**1. Vite base path 설정**
+
+```typescript
+// vite.config.ts
+export default defineConfig({
+  base: '/repository-name/',  // GitHub Pages용
+  // ...
+});
+```
+
+**2. TanStack Router basepath 설정**
+
+```typescript
+// src/App.tsx
+import { RouterProvider, createRouter } from '@tanstack/react-router';
+import { routeTree } from './routeTree.gen';
+
+// Vite의 BASE_URL 사용
+const basepath = import.meta.env.BASE_URL || '/';
+const router = createRouter({ routeTree, basepath });
+```
+
+### 결과
+
+- 링크가 올바른 경로 생성: `/repository-name/login` 대신 `/login`
+- 라우터가 현재 경로를 올바르게 인식
+
+### 확인
+
+```yaml
+# 수정 후 페이지 스냅샷
+- link "Home":
+  - /url: /repository-name/  # basepath 적용됨
+- link "Sign in":
+  - /url: /repository-name/login
 ```
 
 ---
