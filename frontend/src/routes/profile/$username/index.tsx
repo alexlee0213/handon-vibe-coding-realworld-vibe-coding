@@ -6,12 +6,12 @@ import {
   Stack,
 } from '@mantine/core';
 import { IconAlertCircle } from '@tabler/icons-react';
-import { useProfile } from '../../features/profile';
-import { useArticles } from '../../features/article';
-import { ProfileCard } from '../../components/profile';
-import { ArticleList } from '../../components/article';
+import { useProfile } from '../../../features/profile';
+import { useArticles } from '../../../features/article';
+import { ProfileCard } from '../../../components/profile';
+import { ArticleList } from '../../../components/article';
 
-export const Route = createFileRoute('/profile/$username')({
+export const Route = createFileRoute('/profile/$username/')({
   component: ProfilePage,
 });
 

@@ -148,9 +148,68 @@ Playwright MCP를 사용하여 실제 브라우저에서 테스트를 수행합�
 - [x] Profile page shows user info (avatar, username)
 - [x] "My Articles" tab shows user's articles
 - [x] "Favorited Articles" tab is accessible
-- [ ] Favorited article appears in list (Note: Tab content not rendering - potential bug)
+- [x] Favorited article appears in list
 
-**Status:** ⚠️ PARTIAL (Tab navigation works, but content may need investigation)
+**Status:** ✅ PASSED
+
+> **Bug Fixed (2025-11-30):** Initial testing showed content not rendering due to TanStack Router
+> nested route issue. Fixed by restructuring routes from flat file naming (`$username.favorites.tsx`)
+> to folder-based structure (`$username/favorites.tsx`). See Scenario 2.3 for detailed investigation.
+
+---
+
+#### 2.3 심화 테스트: Favorited Articles 라우팅 검증 (Deep Investigation)
+
+> **Purpose:** Detailed investigation of the Favorited Articles tab routing issue.
+> This scenario documents the debugging process and root cause analysis.
+
+**Investigation Steps:**
+
+1. **API Verification**
+   ```bash
+   # Verify backend API returns favorited articles correctly
+   curl -s "http://localhost:8080/api/articles?favorited=e2etest" | jq .
+   ```
+   - [x] API returns `articlesCount: 1` with correct article data
+   - [x] Response includes title, description, tags, author info
+
+2. **Route Configuration Analysis**
+   - [x] Check `routeTree.gen.ts` for route hierarchy
+   - [x] Verify route path definitions
+
+3. **Browser State Verification**
+   - [x] Navigate directly to `/profile/e2etest/favorites`
+   - [x] Check which tab is `[selected]` in accessibility snapshot
+   - [x] Verify which `tabpanel` is rendered
+
+**Root Cause Identified:**
+
+The issue was a **TanStack Router nested route problem**:
+
+| Aspect | Before (Bug) | After (Fixed) |
+|--------|--------------|---------------|
+| File Structure | `$username.favorites.tsx` (dot naming) | `$username/favorites.tsx` (folder) |
+| Route Relationship | Child of `$username` route | Sibling route at root level |
+| Parent Route | `getParentRoute: () => ProfileUsernameRoute` | `getParentRoute: () => rootRouteImport` |
+| Required for Child | `<Outlet />` in parent (missing) | Not required |
+
+**Fix Applied:**
+
+1. Created folder structure: `routes/profile/$username/`
+2. Moved route files:
+   - `$username.tsx` → `$username/index.tsx`
+   - `$username.favorites.tsx` → `$username/favorites.tsx`
+3. Updated import paths to use `../../../` instead of `../../`
+
+**Verification After Fix:**
+
+- [x] "Favorited Articles" tab shows as `[selected]`
+- [x] Article "E2E Test Article" appears in the list
+- [x] All article metadata (author, date, tags) displayed correctly
+- [x] Unfavorite button with count "1" visible
+- [x] Navigation between tabs works correctly
+
+**Status:** ✅ PASSED (Bug Fixed)
 
 ---
 
@@ -205,20 +264,22 @@ Playwright MCP를 사용하여 실제 브라우저에서 테스트를 수행합�
 | 1.4 댓글 작성 | ✅ PASSED | - |
 | 1.5 로그아웃 | ✅ PASSED | - |
 | 2.1 좋아요 | ✅ PASSED | - |
-| 2.2 프로필 Favorites | ⚠️ PARTIAL | Tab content may have rendering issue |
+| 2.2 프로필 Favorites | ✅ PASSED | Bug fixed (routing restructure) |
+| 2.3 심화 라우팅 검증 | ✅ PASSED | Deep investigation documented |
 | 3.1 팔로우 | ⏭️ SKIPPED | Requires multi-user setup |
 | 3.2 피드 확인 | ⏭️ SKIPPED | Requires multi-user setup |
 
-**Overall: 6/9 scenarios passed, 1 partial, 2 skipped**
+**Overall: 8/10 scenarios passed, 0 partial, 2 skipped**
 
 ---
 
 ## Known Issues
 
-### 1. Favorited Articles Tab Content
+### ~~1. Favorited Articles Tab Content~~ (RESOLVED)
 - **Issue:** The "Favorited Articles" tab on the profile page navigates correctly to `/profile/{username}/favorites` but doesn't display the favorited articles.
-- **Impact:** Low - Core favorite functionality works (count updates, button state changes)
-- **Recommended Action:** Investigate profile favorites route data fetching
+- **Root Cause:** TanStack Router nested route configuration - dot naming (`$username.favorites.tsx`) creates child routes that require `<Outlet />` in parent.
+- **Resolution:** Restructured to folder-based routing (`$username/favorites.tsx`) making routes siblings at root level.
+- **Fixed:** 2025-11-30
 
 ---
 
