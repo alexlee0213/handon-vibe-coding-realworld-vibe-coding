@@ -12,7 +12,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "preview": "vite preview",
-    "predeploy": "VITE_API_URL=http://conduit-production-alb-1353750361.us-east-1.elb.amazonaws.com/api npm run build",
+    "predeploy": "VITE_API_URL=https://d3ac90dfhlh677.cloudfront.net/api npm run build",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {

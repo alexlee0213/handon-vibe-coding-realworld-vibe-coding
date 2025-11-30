@@ -4,6 +4,7 @@ import * as cdk from 'aws-cdk-lib';
 import { VpcStack } from '../lib/vpc-stack';
 import { RdsStack } from '../lib/rds-stack';
 import { EcsStack } from '../lib/ecs-stack';
+import { CloudFrontStack } from '../lib/cloudfront-stack';
 
 const app = new cdk.App();
 
@@ -54,5 +55,15 @@ const ecsStack = new EcsStack(app, 'Conduit-Ecs', {
   tags: commonTags,
 });
 ecsStack.addDependency(rdsStack);
+
+// Stack 4: CloudFront for HTTPS (depends on ECS for ALB)
+const cloudFrontStack = new CloudFrontStack(app, 'Conduit-CloudFront', {
+  env,
+  environment,
+  albDnsName: ecsStack.loadBalancer.loadBalancerDnsName,
+  description: 'RealWorld Conduit CloudFront Distribution for HTTPS',
+  tags: commonTags,
+});
+cloudFrontStack.addDependency(ecsStack);
 
 app.synth();
