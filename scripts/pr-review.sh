@@ -132,7 +132,7 @@ if ! gh auth status &> /dev/null; then
 fi
 
 # Get PR details
-PR_JSON=$(gh pr view "$PR_NUMBER" --json title,headRefName,baseRefName,state,author,body,files,additions,deletions 2>/dev/null)
+PR_JSON=$(gh pr view "$PR_NUMBER" --json title,headRefName,baseRefName,state,author,body,files,additions,deletions,mergeable 2>/dev/null)
 if [ $? -ne 0 ]; then
     log_error "Failed to fetch PR #${PR_NUMBER}. Does it exist?"
     exit 1
@@ -145,6 +145,7 @@ PR_STATE=$(echo "$PR_JSON" | jq -r '.state')
 PR_AUTHOR=$(echo "$PR_JSON" | jq -r '.author.login')
 PR_ADDITIONS=$(echo "$PR_JSON" | jq -r '.additions')
 PR_DELETIONS=$(echo "$PR_JSON" | jq -r '.deletions')
+PR_MERGEABLE=$(echo "$PR_JSON" | jq -r '.mergeable')
 
 # Get current GitHub user
 CURRENT_USER=$(gh api user --jq '.login' 2>/dev/null || echo "")
@@ -313,10 +314,15 @@ All checks have passed successfully:
         echo "$REVIEW_BODY"
         echo ""
     elif $IS_OWN_PR; then
-        log_info "Own PR detected. Adding comment and merging..."
+        log_info "Own PR detected. Adding comment..."
         gh pr comment "$PR_NUMBER" --body "$REVIEW_BODY"
-        gh pr merge "$PR_NUMBER" --squash --delete-branch
-        log_success "PR #${PR_NUMBER} merged!"
+        if [ "$PR_MERGEABLE" == "MERGEABLE" ]; then
+            log_info "Merging PR..."
+            gh pr merge "$PR_NUMBER" --squash --delete-branch
+            log_success "PR #${PR_NUMBER} merged!"
+        else
+            log_warning "PR #${PR_NUMBER} is not mergeable (status: ${PR_MERGEABLE}). Please resolve conflicts first."
+        fi
     else
         log_info "Submitting review..."
         gh pr review "$PR_NUMBER" --approve --body "$REVIEW_BODY"
