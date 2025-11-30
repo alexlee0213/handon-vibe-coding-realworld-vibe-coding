@@ -46,8 +46,11 @@ jobs:
             exit 1
           fi
 
-      - name: Run tests
-        run: go test -v -race -coverprofile=coverage.out ./...
+      - name: Run tests with race detection
+        run: go test -v -race ./...
+
+      - name: Run tests with coverage
+        run: go test -coverprofile=coverage.out ./...
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -88,14 +91,7 @@ jobs:
         run: npm run typecheck
 
       - name: Run tests
-        run: npm run test -- --run --coverage
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v4
-        with:
-          file: frontend/coverage/lcov.info
-          flags: frontend
-        continue-on-error: true
+        run: npm run test -- --run
 
       - name: Build
         run: npm run build
