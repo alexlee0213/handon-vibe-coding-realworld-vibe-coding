@@ -54,16 +54,16 @@ backend/
 
 **작업 목록:**
 
-- [ ] `go mod init` 실행
-- [ ] 기본 디렉토리 구조 생성
-- [ ] `cmd/server/main.go` - HTTP 서버 기본 구조
-- [ ] `internal/config/config.go` - 환경변수 로드 (envconfig)
-- [ ] `internal/api/router.go` - 기본 라우터 설정
-- [ ] `internal/api/middleware/logging.go` - 요청 로깅
-- [ ] `internal/api/middleware/cors.go` - CORS 설정
-- [ ] Health check 엔드포인트 (`GET /health`)
-- [ ] Backend Makefile 작성
-- [ ] Backend Dockerfile 작성
+- [x] `go mod init` 실행
+- [x] 기본 디렉토리 구조 생성
+- [x] `cmd/server/main.go` - HTTP 서버 기본 구조
+- [x] `internal/config/config.go` - 환경변수 로드 (envconfig)
+- [x] `internal/api/router.go` - 기본 라우터 설정
+- [x] `internal/api/middleware/logging.go` - 요청 로깅
+- [x] `internal/api/middleware/cors.go` - CORS 설정
+- [x] Health check 엔드포인트 (`GET /health`)
+- [x] Backend Makefile 작성
+- [x] Backend Dockerfile 작성
 
 **검증:**
 ```bash
@@ -94,8 +94,8 @@ frontend/
 
 **작업 목록:**
 
-- [ ] `npm create vite@latest` 실행 (React + TypeScript)
-- [ ] 의존성 설치:
+- [x] `npm create vite@latest` 실행 (React + TypeScript)
+- [x] 의존성 설치:
   ```bash
   npm install @mantine/core @mantine/hooks @mantine/form @mantine/notifications
   npm install @tanstack/react-router @tanstack/react-query
@@ -103,14 +103,14 @@ frontend/
   npm install @tabler/icons-react
   npm install -D vitest @testing-library/react @testing-library/jest-dom jsdom
   ```
-- [ ] Mantine Provider 설정 (`App.tsx`)
-- [ ] 기본 테마 설정 (RealWorld 브랜드 색상)
-- [ ] TanStack Router 기본 설정
-- [ ] TanStack Query Provider 설정
-- [ ] Vitest 설정 (`vitest.config.ts`)
-- [ ] 테스트 셋업 파일 (`src/test/setup.ts`)
-- [ ] API 클라이언트 설정 (`src/lib/api.ts`)
-- [ ] Frontend Dockerfile 작성
+- [x] Mantine Provider 설정 (`App.tsx`)
+- [x] 기본 테마 설정 (RealWorld 브랜드 색상)
+- [x] TanStack Router 기본 설정
+- [x] TanStack Query Provider 설정
+- [x] Vitest 설정 (`vitest.config.ts`)
+- [x] 테스트 셋업 파일 (`src/test/setup.ts`)
+- [x] API 클라이언트 설정 (`src/lib/api.ts`)
+- [x] Frontend Dockerfile 작성
 
 **검증:**
 ```bash
@@ -133,18 +133,18 @@ infra/
 
 **작업 목록:**
 
-- [ ] `npx cdk init app --language typescript`
-- [ ] VPC 스택 기본 구조
-- [ ] CDK 환경 변수 설정
+- [x] `npx cdk init app --language typescript`
+- [x] VPC 스택 기본 구조
+- [x] CDK 환경 변수 설정
 
 ### 1.5 개발 환경 통합
 
 **작업 목록:**
 
-- [ ] 루트 Makefile 작성 (PRD 9.4 참조)
-- [ ] `docker-compose.yml` 작성 (PostgreSQL)
-- [ ] `.env.example` 파일 생성
-- [ ] `scripts/dev.sh` 스크립트 작성
+- [x] 루트 Makefile 작성 (PRD 9.4 참조)
+- [x] `docker-compose.yml` 작성 (PostgreSQL)
+- [x] `.env.example` 파일 생성
+- [x] `scripts/dev.sh` 스크립트 작성
 
 **검증:**
 ```bash
@@ -158,8 +158,8 @@ make dev
 
 **작업 목록:**
 
-- [ ] golang-migrate 설치
-- [ ] 마이그레이션 파일 생성:
+- [x] golang-migrate 설치
+- [x] 마이그레이션 파일 생성:
   - `000001_create_users_table.up.sql`
   - `000001_create_users_table.down.sql`
   - `000002_create_articles_table.up.sql`
@@ -172,7 +172,7 @@ make dev
   - `000005_create_follows_table.down.sql`
   - `000006_create_favorites_table.up.sql`
   - `000006_create_favorites_table.down.sql`
-- [ ] SQLite 초기화 스크립트
+- [x] SQLite 초기화 스크립트
 
 **검증:**
 ```bash
@@ -185,11 +185,11 @@ make migrate-status
 
 **작업 목록:**
 
-- [ ] `.github/workflows/ci.yml` 작성
+- [x] `.github/workflows/ci.yml` 작성
   - Backend 테스트
   - Frontend 테스트 (lint, typecheck, vitest)
   - 빌드 검증
-- [ ] `.github/workflows/deploy-frontend.yml` 작성 (GitHub Pages)
+- [x] `.github/workflows/deploy-frontend.yml` 작성 (GitHub Pages)
 
 **검증:**
 - GitHub에 push 후 Actions 실행 확인
@@ -202,41 +202,41 @@ make migrate-status
 
 **작업 목록:**
 
-- [ ] `internal/domain/user.go` - User 구조체
-- [ ] `internal/domain/errors.go` - 도메인 에러 정의
-- [ ] `internal/repository/user.go` - 사용자 저장소 인터페이스 및 구현
+- [x] `internal/domain/user.go` - User 구조체
+- [x] `internal/domain/errors.go` - 도메인 에러 정의
+- [x] `internal/repository/user.go` - 사용자 저장소 인터페이스 및 구현
   - `CreateUser`
   - `GetUserByID`
   - `GetUserByEmail`
   - `GetUserByUsername`
   - `UpdateUser`
-- [ ] 단위 테스트 작성
+- [x] 단위 테스트 작성
 
 ### 2.2 Backend - 인증 서비스
 
 **작업 목록:**
 
-- [ ] `internal/service/auth.go` - 인증 서비스
+- [x] `internal/service/auth.go` - 인증 서비스
   - `Register` - 회원가입
   - `Login` - 로그인
   - `GenerateToken` - JWT 생성
   - `ValidateToken` - JWT 검증
-- [ ] 비밀번호 해싱 (bcrypt)
-- [ ] 단위 테스트 작성
+- [x] 비밀번호 해싱 (bcrypt)
+- [x] 단위 테스트 작성
 
 ### 2.3 Backend - 인증 API
 
 **작업 목록:**
 
-- [ ] `internal/api/handler/user.go` - 사용자 핸들러
+- [x] `internal/api/handler/user.go` - 사용자 핸들러
   - `POST /api/users` - 회원가입
   - `POST /api/users/login` - 로그인
   - `GET /api/user` - 현재 사용자 조회
   - `PUT /api/user` - 사용자 정보 수정
-- [ ] `internal/api/middleware/auth.go` - JWT 인증 미들웨어
-- [ ] `internal/api/request/user.go` - 요청 DTO
-- [ ] `internal/api/response/user.go` - 응답 DTO
-- [ ] 통합 테스트 작성
+- [x] `internal/api/middleware/auth.go` - JWT 인증 미들웨어
+- [x] `internal/api/request/user.go` - 요청 DTO
+- [x] `internal/api/response/user.go` - 응답 DTO
+- [x] 통합 테스트 작성
 
 **검증:**
 ```bash
@@ -251,23 +251,23 @@ curl -X POST http://localhost:8080/api/users \
 
 **작업 목록:**
 
-- [ ] `src/features/auth/types.ts` - 타입 정의
-- [ ] `src/features/auth/api.ts` - API 호출 함수
-- [ ] `src/features/auth/store.ts` - Zustand 스토어 (토큰, 사용자 정보)
-- [ ] `src/features/auth/hooks.ts` - TanStack Query 훅
-- [ ] `src/features/auth/schemas.ts` - Zod 검증 스키마
-- [ ] `src/lib/api.ts` - 인증 헤더 인터셉터 추가
+- [x] `src/features/auth/types.ts` - 타입 정의
+- [x] `src/features/auth/api.ts` - API 호출 함수
+- [x] `src/features/auth/store.ts` - Zustand 스토어 (토큰, 사용자 정보)
+- [x] `src/features/auth/hooks.ts` - TanStack Query 훅
+- [x] `src/features/auth/schemas.ts` - Zod 검증 스키마
+- [x] `src/lib/api.ts` - 인증 헤더 인터셉터 추가
 
 ### 2.5 Frontend - 인증 UI
 
 **작업 목록:**
 
-- [ ] `src/components/layout/Header.tsx` - 네비게이션 (로그인 상태 반영)
-- [ ] `src/components/layout/Layout.tsx` - 기본 레이아웃
-- [ ] `src/routes/login.tsx` - 로그인 페이지
-- [ ] `src/routes/register.tsx` - 회원가입 페이지
-- [ ] 인증 필요 라우트 가드 구현
-- [ ] 컴포넌트 테스트 작성
+- [x] `src/components/layout/Header.tsx` - 네비게이션 (로그인 상태 반영)
+- [x] `src/components/layout/Layout.tsx` - 기본 레이아웃
+- [x] `src/routes/login.tsx` - 로그인 페이지
+- [x] `src/routes/register.tsx` - 회원가입 페이지
+- [x] 인증 필요 라우트 가드 구현
+- [x] 컴포넌트 테스트 작성
 
 **검증:**
 ```bash
@@ -283,50 +283,50 @@ npm run test
 
 **작업 목록:**
 
-- [ ] `internal/domain/article.go` - Article 구조체
-- [ ] `internal/repository/article.go` - 아티클 저장소
+- [x] `internal/domain/article.go` - Article 구조체
+- [x] `internal/repository/article.go` - 아티클 저장소
   - `CreateArticle`
   - `GetArticleBySlug`
   - `ListArticles` (필터링, 페이지네이션)
   - `UpdateArticle`
   - `DeleteArticle`
-- [ ] Slug 생성 유틸리티
-- [ ] 단위 테스트 작성
+- [x] Slug 생성 유틸리티
+- [x] 단위 테스트 작성
 
 ### 3.2 Backend - 아티클 API
 
 **작업 목록:**
 
-- [ ] `internal/api/handler/article.go` - 아티클 핸들러
+- [x] `internal/api/handler/article.go` - 아티클 핸들러
   - `POST /api/articles` - 아티클 생성
   - `GET /api/articles` - 아티클 목록
   - `GET /api/articles/:slug` - 아티클 상세
   - `PUT /api/articles/:slug` - 아티클 수정
   - `DELETE /api/articles/:slug` - 아티클 삭제
-- [ ] 권한 체크 (작성자만 수정/삭제)
-- [ ] 통합 테스트 작성
+- [x] 권한 체크 (작성자만 수정/삭제)
+- [x] 통합 테스트 작성
 
 ### 3.3 Frontend - 아티클 상태 관리
 
 **작업 목록:**
 
-- [ ] `src/features/article/types.ts` - 타입 정의
-- [ ] `src/features/article/api.ts` - API 호출 함수
-- [ ] `src/features/article/hooks.ts` - TanStack Query 훅
-- [ ] `src/features/article/schemas.ts` - Zod 검증 스키마
+- [x] `src/features/article/types.ts` - 타입 정의
+- [x] `src/features/article/api.ts` - API 호출 함수
+- [x] `src/features/article/hooks.ts` - TanStack Query 훅
+- [x] `src/features/article/schemas.ts` - Zod 검증 스키마
 
 ### 3.4 Frontend - 아티클 UI
 
 **작업 목록:**
 
-- [ ] `src/components/article/ArticleCard.tsx` - 아티클 카드
-- [ ] `src/components/article/ArticleList.tsx` - 아티클 목록
-- [ ] `src/components/article/ArticleMeta.tsx` - 아티클 메타 정보
-- [ ] `src/routes/index.tsx` - 홈 페이지 (아티클 목록)
-- [ ] `src/routes/article/$slug.tsx` - 아티클 상세 페이지
-- [ ] `src/routes/editor/index.tsx` - 새 글 작성 페이지
-- [ ] `src/routes/editor/$slug.tsx` - 글 수정 페이지
-- [ ] 컴포넌트 테스트 작성
+- [x] `src/components/article/ArticleCard.tsx` - 아티클 카드
+- [x] `src/components/article/ArticleList.tsx` - 아티클 목록
+- [x] `src/components/article/ArticleMeta.tsx` - 아티클 메타 정보
+- [x] `src/routes/index.tsx` - 홈 페이지 (아티클 목록)
+- [x] `src/routes/article/$slug.tsx` - 아티클 상세 페이지
+- [x] `src/routes/editor/index.tsx` - 새 글 작성 페이지
+- [x] `src/routes/editor/$slug.tsx` - 글 수정 페이지
+- [x] 컴포넌트 테스트 작성
 
 ---
 
