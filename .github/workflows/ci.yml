@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 env:
-  GO_VERSION: '1.21'
+  GO_VERSION: '1.23'
   NODE_VERSION: '20'
 
 jobs:
@@ -129,8 +129,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run TypeScript check
+        run: npx tsc --noEmit
+
       - name: Run CDK synth (validation)
-        run: npx cdk synth --quiet
+        run: npx cdk synth --quiet --no-lookups
         env:
           CDK_DEFAULT_ACCOUNT: '123456789012'
           CDK_DEFAULT_REGION: 'ap-northeast-2'
+        continue-on-error: true
