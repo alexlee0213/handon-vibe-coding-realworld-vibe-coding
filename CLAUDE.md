@@ -172,6 +172,26 @@ slog.Info("article created",
 
 ## Development Guidelines
 
+### Issue 완료 시 체크리스트 (⚠️ 필수)
+
+> **🚨 중요: GitHub Issue를 닫기 전에 반드시 `docs/plan.md` 체크리스트를 업데이트하세요!**
+
+GitHub Issue를 완료하고 닫을 때 다음 단계를 반드시 수행:
+
+1. **코드 구현 및 테스트 완료**
+2. **커밋 및 푸시**
+3. **`docs/plan.md` 해당 항목 체크** ← 필수!
+   - `[ ]` → `[x]`로 변경
+4. **GitHub Issue 닫기**
+
+```bash
+# 예시: Phase 4.1 완료 시
+# docs/plan.md에서 해당 항목들을 [x]로 변경:
+- [x] `internal/domain/comment.go` - Comment 구조체
+- [x] `internal/domain/tag.go` - Tag 구조체
+...
+```
+
 ### Backend: TDD (Test-Driven Development)
 
 백엔드 구현은 TDD 원칙을 따른다:

@@ -336,23 +336,23 @@ npm run test
 
 **작업 목록:**
 
-- [ ] `internal/domain/comment.go` - Comment 구조체
-- [ ] `internal/domain/tag.go` - Tag 구조체
-- [ ] `internal/repository/comment.go` - 댓글 저장소
-- [ ] `internal/repository/tag.go` - 태그 저장소
-- [ ] 단위 테스트 작성
+- [x] `internal/domain/comment.go` - Comment 구조체
+- [x] `internal/domain/tag.go` - Tag 구조체
+- [x] `internal/repository/comment.go` - 댓글 저장소
+- [x] `internal/repository/tag.go` - 태그 저장소
+- [x] 단위 테스트 작성
 
 ### 4.2 Backend - 댓글/태그 API
 
 **작업 목록:**
 
-- [ ] `internal/api/handler/comment.go` - 댓글 핸들러
+- [x] `internal/api/handler/comment.go` - 댓글 핸들러
   - `GET /api/articles/:slug/comments`
   - `POST /api/articles/:slug/comments`
   - `DELETE /api/articles/:slug/comments/:id`
-- [ ] `internal/api/handler/tag.go` - 태그 핸들러
+- [x] `internal/api/handler/tag.go` - 태그 핸들러 (ArticleHandler.GetTags에 이미 구현됨)
   - `GET /api/tags`
-- [ ] 통합 테스트 작성
+- [x] 통합 테스트 작성
 
 ### 4.3 Frontend - 댓글/태그 UI
 
