@@ -38,8 +38,14 @@ func NewRouter(cfg *config.Config, logger *slog.Logger) (*Router, error) {
 }
 
 func initDatabase(databaseURL string) (*sql.DB, error) {
-	// Parse database URL (sqlite://./data/conduit.db)
-	dbPath := strings.TrimPrefix(databaseURL, "sqlite://")
+	// Parse database URL (supports both sqlite:// and sqlite3:// prefixes)
+	// golang-migrate uses sqlite3://, so we support both for consistency
+	dbPath := databaseURL
+	if strings.HasPrefix(dbPath, "sqlite3://") {
+		dbPath = strings.TrimPrefix(dbPath, "sqlite3://")
+	} else if strings.HasPrefix(dbPath, "sqlite://") {
+		dbPath = strings.TrimPrefix(dbPath, "sqlite://")
+	}
 
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {

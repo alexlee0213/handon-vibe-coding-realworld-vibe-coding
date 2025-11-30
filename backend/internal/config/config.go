@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"os"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 // Default insecure JWT secret - must be changed in production
@@ -39,6 +41,23 @@ type CORSConfig struct {
 }
 
 func Load() (*Config, error) {
+	// Load .env file if it exists (ignore error if file doesn't exist)
+	// This allows environment variables to be set via .env file in development
+	// while still supporting direct environment variables in production
+	// Try multiple paths: current directory, parent directory (for running from backend/)
+	envPaths := []string{".env", "../.env"}
+	envLoaded := false
+	for _, path := range envPaths {
+		if err := godotenv.Load(path); err == nil {
+			envLoaded = true
+			slog.Debug("loaded .env file", "path", path)
+			break
+		}
+	}
+	if !envLoaded {
+		slog.Debug("no .env file found, using system environment variables")
+	}
+
 	env := getEnv("SERVER_ENV", "development")
 	jwtSecret := getEnv("JWT_SECRET", defaultJWTSecret)
 
@@ -61,7 +80,7 @@ func Load() (*Config, error) {
 			Env:  env,
 		},
 		Database: DatabaseConfig{
-			URL: getEnv("DATABASE_URL", "sqlite://./data/conduit.db"),
+			URL: getEnv("DATABASE_URL", "sqlite3://./data/conduit.db"),
 		},
 		JWT: JWTConfig{
 			Secret: jwtSecret,
