@@ -1,1 +1,85 @@
+# ===================
+# IDE & Editor
+# ===================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
 .claude/settings.local.json
+
+# ===================
+# OS
+# ===================
+.DS_Store
+Thumbs.db
+
+# ===================
+# Environment
+# ===================
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ===================
+# Backend (Go)
+# ===================
+backend/bin/
+backend/data/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# ===================
+# Frontend (React/Vite)
+# ===================
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+frontend/.vite/
+*.local
+
+# Logs
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+frontend/pnpm-debug.log*
+
+# ===================
+# Infrastructure (AWS CDK)
+# ===================
+infra/node_modules/
+infra/cdk.out/
+infra/*.js
+infra/*.d.ts
+!infra/jest.config.js
+
+# ===================
+# Docker
+# ===================
+docker-compose.override.yml
+
+# ===================
+# Testing
+# ===================
+*.cover
+*.prof
+__snapshots__/
+
+# ===================
+# Misc
+# ===================
+*.log
+*.tmp
+*.temp
+.cache/
