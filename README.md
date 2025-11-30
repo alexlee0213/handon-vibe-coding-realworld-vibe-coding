@@ -205,7 +205,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
 ## Security
 
-See [docs/SECURITY.md](docs/SECURITY.md) for security policies.
+See [docs/security.md](docs/security.md) for security policies.
 
 ## License
 
