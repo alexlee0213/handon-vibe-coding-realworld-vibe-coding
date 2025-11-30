@@ -28,32 +28,30 @@ export function ArticleCard({ article }: ArticleCardProps) {
         </Group>
 
         <Stack gap={4}>
-          <Text
-            component={Link}
+          <Link
             to="/article/$slug"
             params={{ slug: article.slug }}
-            size="lg"
-            fw={600}
             style={{ textDecoration: 'none', color: 'inherit' }}
           >
-            {article.title}
-          </Text>
+            <Text size="lg" fw={600}>
+              {article.title}
+            </Text>
+          </Link>
           <Text size="sm" c="dimmed" lineClamp={2}>
             {article.description}
           </Text>
         </Stack>
 
         <Group justify="space-between" align="center">
-          <Text
-            component={Link}
+          <Link
             to="/article/$slug"
             params={{ slug: article.slug }}
-            size="xs"
-            c="dimmed"
             style={{ textDecoration: 'none' }}
           >
-            Read more...
-          </Text>
+            <Text size="xs" c="dimmed">
+              Read more...
+            </Text>
+          </Link>
           <Group gap={4}>
             {(article.tagList || []).map((tag) => (
               <Badge

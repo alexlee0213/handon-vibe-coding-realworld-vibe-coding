@@ -48,4 +48,4 @@ export {
   tagSchema,
   slugSchema,
 } from './schemas';
-export type { CreateArticleFormValues, UpdateArticleFormValues } from './schemas';
+export type { CreateArticleFormValues, CreateArticleData, UpdateArticleFormValues } from './schemas';

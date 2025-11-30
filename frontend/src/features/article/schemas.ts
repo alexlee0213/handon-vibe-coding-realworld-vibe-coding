@@ -25,7 +25,11 @@ export const createArticleSchema = z.object({
     }),
 });
 
-export type CreateArticleFormValues = z.infer<typeof createArticleSchema>;
+// Form input type (before transform)
+export type CreateArticleFormValues = z.input<typeof createArticleSchema>;
+
+// Form output type (after transform) - used when submitting to API
+export type CreateArticleData = z.output<typeof createArticleSchema>;
 
 // Update article form schema (all fields optional)
 export const updateArticleSchema = z.object({

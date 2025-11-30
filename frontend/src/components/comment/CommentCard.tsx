@@ -45,7 +45,7 @@ export function CommentCard({
           style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}
         >
           <Group gap="xs">
-            <Link to={`/profile/${comment.author.username}`}>
+            <Link to="/profile/$username" params={{ username: comment.author.username }}>
               <Avatar
                 src={comment.author.image || undefined}
                 alt={comment.author.username}
@@ -53,15 +53,15 @@ export function CommentCard({
                 size="sm"
               />
             </Link>
-            <Text
-              component={Link}
-              to={`/profile/${comment.author.username}`}
-              size="sm"
-              c="brand"
+            <Link
+              to="/profile/$username"
+              params={{ username: comment.author.username }}
               style={{ textDecoration: 'none' }}
             >
-              {comment.author.username}
-            </Text>
+              <Text size="sm" c="brand">
+                {comment.author.username}
+              </Text>
+            </Link>
             <Text size="xs" c="dimmed">
               {formattedDate}
             </Text>

@@ -41,16 +41,13 @@ function NewArticleForm() {
   });
 
   const handleSubmit = (values: CreateArticleFormValues) => {
-    // Transform tagList string to array
-    const tagList = typeof values.tagList === 'string'
-      ? values.tagList.split(',').map(t => t.trim()).filter(t => t.length > 0)
-      : values.tagList;
-
+    // Parse through zod schema to transform tagList string to array
+    const parsed = createArticleSchema.parse(values);
     createArticle.mutate({
-      title: values.title,
-      description: values.description,
-      body: values.body,
-      tagList,
+      title: parsed.title,
+      description: parsed.description,
+      body: parsed.body,
+      tagList: parsed.tagList,
     });
   };
 

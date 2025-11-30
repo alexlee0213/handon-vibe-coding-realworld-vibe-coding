@@ -95,17 +95,16 @@ function ArticlePage() {
               <ArticleMeta author={article.author} createdAt={article.createdAt} />
               {isAuthor && (
                 <Group gap="xs">
-                  <Button
-                    component={Link}
-                    to="/editor/$slug"
-                    params={{ slug: article.slug }}
-                    variant="outline"
-                    color="gray"
-                    size="xs"
-                    leftSection={<IconEdit size={14} />}
-                  >
-                    Edit Article
-                  </Button>
+                  <Link to="/editor/$slug" params={{ slug: article.slug }}>
+                    <Button
+                      variant="outline"
+                      color="gray"
+                      size="xs"
+                      leftSection={<IconEdit size={14} />}
+                    >
+                      Edit Article
+                    </Button>
+                  </Link>
                   <Button
                     variant="outline"
                     color="red"

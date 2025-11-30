@@ -20,7 +20,7 @@ export function ArticleMeta({ author, createdAt, size = 'md' }: ArticleMetaProps
 
   return (
     <Group gap="xs">
-      <Link to={`/profile/${author.username}`}>
+      <Link to="/profile/$username" params={{ username: author.username }}>
         <Avatar
           src={author.image || undefined}
           alt={author.username}
@@ -29,16 +29,15 @@ export function ArticleMeta({ author, createdAt, size = 'md' }: ArticleMetaProps
         />
       </Link>
       <Stack gap={0}>
-        <Text
-          component={Link}
-          to={`/profile/${author.username}`}
-          size={textSize}
-          fw={500}
-          c="brand"
+        <Link
+          to="/profile/$username"
+          params={{ username: author.username }}
           style={{ textDecoration: 'none' }}
         >
-          {author.username}
-        </Text>
+          <Text size={textSize} fw={500} c="brand">
+            {author.username}
+          </Text>
+        </Link>
         <Text size="xs" c="dimmed">
           {formattedDate}
         </Text>
